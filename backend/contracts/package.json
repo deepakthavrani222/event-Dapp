@@ -1,0 +1,19 @@
+{
+  "name": "ticketchain-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for TicketChain platform",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:mumbai": "hardhat run contracts/deploy.js --network mumbai",
+    "deploy:polygon": "hardhat run contracts/deploy.js --network polygon",
+    "verify": "hardhat verify --network mumbai",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "hardhat": "^2.19.0",
+    "dotenv": "^16.3.1"
+  }
+}

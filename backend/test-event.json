@@ -1,0 +1,39 @@
+{
+  "title": "Rock Concert 2025",
+  "description": "Amazing rock concert featuring top bands",
+  "category": "CONCERT",
+  "venue": {
+    "name": "Mumbai Arena",
+    "address": "123 Main Street",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "country": "India",
+    "capacity": 5000
+  },
+  "startDate": "2025-06-15T19:00:00Z",
+  "endDate": "2025-06-15T23:00:00Z",
+  "ticketTypes": [
+    {
+      "name": "General Admission",
+      "description": "Standing area access",
+      "price": 1500,
+      "currency": "INR",
+      "totalSupply": 3000,
+      "maxPerWallet": 4
+    },
+    {
+      "name": "VIP",
+      "description": "VIP seating with exclusive access",
+      "price": 5000,
+      "currency": "INR",
+      "totalSupply": 500,
+      "maxPerWallet": 2
+    }
+  ],
+  "royaltySplit": {
+    "organizer": 70,
+    "artist": 15,
+    "venue": 10,
+    "platform": 5
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "ticketchain-backend",
+  "version": "1.0.0",
+  "description": "Web3 Ticketing Platform Backend - Next.js API Routes",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint",
+    "db:seed": "node lib/db/seed.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "contract:compile": "hardhat compile",
+    "contract:test": "hardhat test",
+    "contract:deploy:sepolia": "hardhat run contracts/deploy.js --network sepolia",
+    "contract:deploy:ethereum": "hardhat run contracts/deploy.js --network ethereum",
+    "contract:verify": "hardhat verify --network sepolia",
+    "contract:balance": "node check-balance.js"
+  },
+  "dependencies": {
+    "@novu/node": "^2.0.0",
+    "bcrypt": "^5.1.1",
+    "ethers": "^6.13.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.0",
+    "nanoid": "^5.0.0",
+    "next": "^14.2.0",
+    "qrcode": "^1.5.3",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "socket.io": "^4.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "dotenv": "^16.3.1",
+    "fast-check": "^3.22.0",
+    "hardhat": "^2.27.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}

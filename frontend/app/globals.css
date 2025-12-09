@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-background: oklch(0.12 0.01 270);
+  --color-foreground: oklch(0.95 0.01 270);
+  --color-card: oklch(0.15 0.015 270);
+  --color-card-foreground: oklch(0.95 0.01 270);
+  --color-popover: oklch(0.16 0.015 270);
+  --color-popover-foreground: oklch(0.95 0.01 270);
+  --color-primary: oklch(0.6 0.24 290);
+  --color-primary-foreground: oklch(0.98 0 0);
+  --color-secondary: oklch(0.65 0.18 200);
+  --color-secondary-foreground: oklch(0.98 0 0);
+  --color-muted: oklch(0.2 0.01 270);
+  --color-muted-foreground: oklch(0.6 0.01 270);
+  --color-accent: oklch(0.7 0.2 60);
+  --color-accent-foreground: oklch(0.12 0.01 270);
+  --color-destructive: oklch(0.6 0.25 25);
+  --color-destructive-foreground: oklch(0.98 0 0);
+  --color-border: oklch(0.25 0.01 270);
+  --color-input: oklch(0.2 0.015 270);
+  --color-ring: oklch(0.6 0.24 290);
+
+  /* Chart colors - neon palette */
+  --color-chart-1: oklch(0.6 0.24 290);
+  --color-chart-2: oklch(0.65 0.18 200);
+  --color-chart-3: oklch(0.7 0.2 60);
+  --color-chart-4: oklch(0.65 0.22 330);
+  --color-chart-5: oklch(0.68 0.16 150);
+
+  /* Border radius - rounded for modern feel */
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+
+  /* Sidebar colors */
+  --color-sidebar: oklch(0.14 0.015 270);
+  --color-sidebar-foreground: oklch(0.95 0.01 270);
+  --color-sidebar-primary: oklch(0.6 0.24 290);
+  --color-sidebar-primary-foreground: oklch(0.98 0 0);
+  --color-sidebar-accent: oklch(0.2 0.01 270);
+  --color-sidebar-accent-foreground: oklch(0.95 0.01 270);
+  --color-sidebar-border: oklch(0.25 0.01 270);
+  --color-sidebar-ring: oklch(0.6 0.24 290);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Neon glow effects for Web3 premium aesthetic */
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(6, 182, 212, 0.3);
+  }
+
+  .neon-glow-hover:hover {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.7), 0 0 60px rgba(6, 182, 212, 0.5);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-purple-cyan {
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  }
+
+  .gradient-purple-pink {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  }
+
+  .gradient-cyan-emerald {
+    background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+  }
+
+  .text-gradient-neon {
+    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .soft-shadow-dark {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .border-gradient {
+    border: 2px solid transparent;
+    background-image: linear-gradient(#0f0f1a, #0f0f1a), linear-gradient(135deg, #8b5cf6, #06b6d4);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+}

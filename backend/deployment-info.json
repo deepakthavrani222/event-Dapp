@@ -1,0 +1,8 @@
+{
+  "network": "sepolia",
+  "contractAddress": "0xD69CabD6C3Aab58c145D4275c5Aca5210c7ADb9E",
+  "deployer": "0x2688AfA324CFee19eae07667aD62Cf0418Abe046",
+  "baseURI": "https://api.ticketchain.com/metadata/",
+  "deployedAt": "2025-12-09T11:47:14.724Z",
+  "transactionHash": "0xf3856ae470b8236e7be02ac61404b8dfb8958d357e2d1ead11350e67ab6f42fd"
+}
