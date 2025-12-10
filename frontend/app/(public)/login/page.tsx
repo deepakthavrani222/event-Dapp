@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { Footer } from '@/components/shared/footer';
 
 export default function LoginPage() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -40,8 +41,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <LoginForm />
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <LoginForm />
+      </div>
+      <Footer />
     </div>
   );
 }

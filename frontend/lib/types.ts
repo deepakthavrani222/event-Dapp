@@ -6,14 +6,20 @@ export interface Event {
   category: string;
   date: string;
   time: string;
-  venue: string;
+  startDate?: string; // For compatibility with EventCard
+  venue: string | { name: string; city: string; state: string }; // Support both formats
   city: string;
   location: string;
   image: string;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   rejectionReason?: string;
   minPrice?: number;
+  price?: number; // For OpenSeaEventCard compatibility
   totalAvailable?: number;
+  availableTickets?: number; // For OpenSeaEventCard compatibility
+  totalTickets?: number; // For OpenSeaEventCard compatibility
+  isLive?: boolean; // For OpenSeaEventCard compatibility
+  trending?: boolean; // For OpenSeaEventCard compatibility
   ticketTypes?: TicketType[];
   organizer?: {
     id: string;

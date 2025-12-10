@@ -3,6 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/middleware/auth';
 import { connectDB } from '@/lib/db/connection';
 import { Event, TicketType, Ticket, Transaction, Referral } from '@/lib/db/models';
 import { mintTickets } from '@/lib/blockchain/ticket-nft';
+import { notifyTicketSold, notifyMilestone } from '@/lib/services/notification';
 
 /**
  * POST /api/buyer/purchase
@@ -121,6 +122,36 @@ export async function POST(request: NextRequest) {
     // Update available supply
     ticketType.availableSupply -= quantity;
     await ticketType.save();
+
+    // Get event details for notification
+    const event = await Event.findById(ticketType.eventId);
+    
+    // Notify organizer of ticket sale
+    if (event) {
+      try {
+        await notifyTicketSold(
+          event.organizerId.toString(),
+          event.title,
+          ticketType.name,
+          ticketType.price * quantity
+        );
+
+        // Check for milestones (50%, 75%, 100% sold)
+        const totalSold = ticketType.totalSupply - ticketType.availableSupply;
+        const percentSold = (totalSold / ticketType.totalSupply) * 100;
+        
+        if (percentSold >= 100 && percentSold - ((quantity / ticketType.totalSupply) * 100) < 100) {
+          await notifyMilestone(event.organizerId.toString(), event.title, '100%');
+        } else if (percentSold >= 75 && percentSold - ((quantity / ticketType.totalSupply) * 100) < 75) {
+          await notifyMilestone(event.organizerId.toString(), event.title, '75%');
+        } else if (percentSold >= 50 && percentSold - ((quantity / ticketType.totalSupply) * 100) < 50) {
+          await notifyMilestone(event.organizerId.toString(), event.title, '50%');
+        }
+      } catch (notifyError) {
+        console.error('Failed to send notification:', notifyError);
+        // Don't fail the purchase if notification fails
+      }
+    }
 
     // Calculate referral commission if applicable
     let referralCommission = 0;

@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
-import { DashboardHeader } from "@/components/shared/dashboard-header"
+import { PublicHeader } from "@/components/shared/public-header"
 
 export default function BuyerLayout({
   children,
@@ -34,7 +34,7 @@ export default function BuyerLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <DashboardHeader role="buyer" />
+      <PublicHeader />
       <main className="flex-1">{children}</main>
     </div>
   )

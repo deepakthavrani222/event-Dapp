@@ -64,12 +64,25 @@ export async function GET(request: NextRequest) {
           title: event.title,
           description: event.description,
           category: event.category,
-          venue: event.venue,
-          startDate: event.startDate,
-          endDate: event.endDate,
+          date: event.date ? event.date.toISOString() : null,
+          time: event.time || '00:00',
+          startDate: event.date ? event.date.toISOString() : null, // For EventCard compatibility
+          venue: {
+            name: event.venue,
+            city: event.city,
+            state: event.city, // Using city as state for now
+          },
+          city: event.city,
+          location: event.location || event.venue,
+          image: event.image || '/placeholder.svg',
           status: event.status,
           minPrice,
+          price: minPrice, // For OpenSeaEventCard compatibility
           totalAvailable,
+          availableTickets: totalAvailable, // For OpenSeaEventCard compatibility
+          totalTickets: ticketTypes.reduce((sum, tt) => sum + tt.totalSupply, 0),
+          isLive: false, // Default values for OpenSeaEventCard
+          trending: Math.random() > 0.7, // Random trending status for demo
           ticketTypes: ticketTypes.map(tt => ({
             id: tt._id,
             name: tt.name,

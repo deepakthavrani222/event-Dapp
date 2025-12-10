@@ -17,10 +17,12 @@ interface EventCardProps {
       name: string;
       city: string;
       state: string;
-    };
-    startDate: string;
-    minPrice: number;
-    totalAvailable: number;
+    } | string;
+    city?: string;
+    startDate?: string;
+    date?: string;
+    minPrice?: number;
+    totalAvailable?: number;
   };
 }
 
@@ -42,12 +44,25 @@ export function EventCard({ event }: EventCardProps) {
       <CardContent className="space-y-2">
         <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 mr-2" />
-          {format(new Date(event.startDate), 'PPP p')}
+          {(() => {
+            try {
+              const dateStr = event.startDate || event.date;
+              if (!dateStr) return 'Date TBD';
+              const date = new Date(dateStr);
+              if (isNaN(date.getTime())) return 'Date TBD';
+              return format(date, 'PPP p');
+            } catch (error) {
+              return 'Date TBD';
+            }
+          })()}
         </div>
         
         <div className="flex items-center text-sm text-muted-foreground">
           <MapPin className="h-4 w-4 mr-2" />
-          {event.venue.name}, {event.venue.city}
+          {typeof event.venue === 'object' 
+            ? `${event.venue.name}, ${event.venue.city}`
+            : `${event.venue}, ${event.city || ''}`
+          }
         </div>
         
         <div className="flex items-center text-sm text-muted-foreground">
@@ -59,7 +74,9 @@ export function EventCard({ event }: EventCardProps) {
       <CardFooter className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Starting from</p>
-          <p className="text-2xl font-bold">₹{event.minPrice.toLocaleString()}</p>
+          <p className="text-2xl font-bold">
+            ₹{(event.minPrice || 0).toLocaleString()}
+          </p>
         </div>
         
         <Button asChild>

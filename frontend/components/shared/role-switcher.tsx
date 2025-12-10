@@ -1,6 +1,7 @@
 "use client"
 
 import { useRole, type UserRole } from "@/hooks/use-role"
+import { useAuth } from "@/lib/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, ChevronDown } from "lucide-react"
+import { User, ChevronDown, LogOut } from "lucide-react"
 
 const ROLES: { value: UserRole; label: string }[] = [
   { value: "buyer", label: "Buyer" },
@@ -25,6 +26,7 @@ const ROLES: { value: UserRole; label: string }[] = [
 
 export function RoleSwitcher() {
   const { role, switchRole, user } = useRole()
+  const { logout } = useAuth()
 
   const currentRoleLabel = ROLES.find((r) => r.value === role)?.label || "Guest"
 
@@ -49,6 +51,14 @@ export function RoleSwitcher() {
             {r.label}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={logout}
+          className="text-red-600 focus:text-red-600"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

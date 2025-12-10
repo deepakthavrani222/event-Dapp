@@ -7,3 +7,4 @@ export { Listing, type IListing } from './Listing';
 export { Transaction, type ITransaction } from './Transaction';
 export { Royalty, type IRoyalty } from './Royalty';
 export { Referral, type IReferral } from './Referral';
+export { Withdrawal, type IWithdrawal } from './Withdrawal';

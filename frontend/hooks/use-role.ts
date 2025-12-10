@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/context/AuthContext"
 
 export type UserRole =
   | "guest"
@@ -13,54 +13,45 @@ export type UserRole =
   | "admin"
   | "inspector"
 
-interface User {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-  avatar?: string
-}
-
-// Mock user data - replace with real auth
-const MOCK_USER: User = {
-  id: "1",
-  name: "Demo User",
-  email: "demo@ticketchain.io",
-  role: "buyer",
-  avatar: "/diverse-user-avatars.png",
-}
-
 export function useRole() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user: authUser, loading, logout: authLogout, isAuthenticated } = useAuth()
 
-  useEffect(() => {
-    // Simulate auth check
-    setTimeout(() => {
-      setUser(MOCK_USER)
-      setLoading(false)
-    }, 100)
-  }, [])
+  // Convert auth user to role user format
+  const user = authUser ? {
+    id: authUser.id,
+    name: authUser.name,
+    email: authUser.email || '',
+    role: (authUser.role?.toLowerCase() || 'buyer') as UserRole,
+    avatar: undefined
+  } : null
 
   const switchRole = (newRole: UserRole) => {
-    if (user) {
-      setUser({ ...user, role: newRole })
+    // For demo purposes, allow role switching
+    // In production, this would be handled by backend
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem('demo-role', newRole)
+      window.location.reload()
     }
   }
 
+  // Get demo role from localStorage if exists
+  const demoRole = typeof window !== 'undefined' ? localStorage.getItem('demo-role') as UserRole : null
+  const currentRole = demoRole || user?.role || 'guest'
+
   return {
     user,
-    role: user?.role || "guest",
-    isGuest: !user || user.role === "guest",
-    isBuyer: user?.role === "buyer",
-    isOrganizer: user?.role === "organizer",
-    isPromoter: user?.role === "promoter",
-    isVenueOwner: user?.role === "venue-owner",
-    isArtist: user?.role === "artist",
-    isReseller: user?.role === "reseller",
-    isAdmin: user?.role === "admin",
-    isInspector: user?.role === "inspector",
+    role: currentRole,
+    isGuest: !isAuthenticated || currentRole === "guest",
+    isBuyer: currentRole === "buyer",
+    isOrganizer: currentRole === "organizer",
+    isPromoter: currentRole === "promoter",
+    isVenueOwner: currentRole === "venue-owner",
+    isArtist: currentRole === "artist",
+    isReseller: currentRole === "reseller",
+    isAdmin: currentRole === "admin",
+    isInspector: currentRole === "inspector",
     loading,
     switchRole,
+    logout: authLogout,
   }
 }

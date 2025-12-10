@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, name?: string) => Promise<void>;
+  login: (email: string, name?: string) => Promise<any>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -41,10 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyToken = async (tokenToVerify: string) => {
     try {
+      // Set the token first so it's available for the API call
+      setToken(tokenToVerify);
       const response = await apiClient.verifyToken();
       if (response.valid && response.user) {
         setUser(response.user);
       } else {
+        console.error('Token verification failed: Invalid response', response);
         localStorage.removeItem('token');
         setToken(null);
       }
@@ -62,9 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiClient.login(email, name);
       
       if (response.success && response.token) {
+        console.log('Login successful, saving token:', !!response.token);
         localStorage.setItem('token', response.token);
         setToken(response.token);
         setUser(response.user);
+        console.log('User logged in:', response.user);
+        return response; // Return the response so LoginForm can access user data
       } else {
         throw new Error('Login failed');
       }

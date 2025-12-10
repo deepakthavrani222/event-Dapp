@@ -21,7 +21,9 @@ import {
   ShoppingBag,
   Shield,
   ScanLine,
+  Wallet,
 } from "lucide-react"
+import { NotificationBell } from "./notification-bell"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface DashboardHeaderProps {
@@ -39,6 +41,8 @@ const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon
     { label: "Dashboard", href: "/organizer", icon: LayoutDashboard },
     { label: "Create Event", href: "/organizer/create", icon: Calendar },
     { label: "My Events", href: "/organizer/events", icon: Music },
+    { label: "Earnings", href: "/organizer/earnings", icon: TrendingUp },
+    { label: "Settings", href: "/organizer/settings", icon: Shield },
   ],
   promoter: [
     { label: "Dashboard", href: "/promoter", icon: LayoutDashboard },
@@ -114,6 +118,7 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <RoleSwitcher />
           <Button size="sm" variant="outline" className="hidden md:flex gap-2 bg-transparent">
             <User className="h-4 w-4" />

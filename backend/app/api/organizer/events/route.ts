@@ -8,6 +8,7 @@ import { generateTokenId } from '@/lib/utils/token-id';
  * POST /api/organizer/events
  * Create a new event with ticket types
  * Only ORGANIZER and ADMIN roles can access
+ * Auto-approves small events (<100 tickets)
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAuth(request);
@@ -31,82 +32,104 @@ export async function POST(request: NextRequest) {
       description,
       category,
       venue,
-      startDate,
-      endDate,
-      ticketTypes,
-      royaltySplit,
+      city,
+      location,
+      image,
+      imagePublicId,
+      date,
+      time,
+      timezone,
+      royaltySettings,
+      promotionSettings,
+      venueFee,
     } = body;
 
     // Validate required fields
-    if (!title || !venue || !startDate || !ticketTypes || ticketTypes.length === 0) {
+    if (!title || !description || !venue || !city || !location || !date || !time) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, venue, startDate, ticketTypes' },
+        { error: 'Missing required fields: title, description, venue, city, location, date, time' },
         { status: 400 }
       );
     }
+
+    // Parse royalty settings with defaults
+    const parsedRoyaltySettings = {
+      enableResale: royaltySettings?.soulbound ? false : (royaltySettings?.enableResale !== false),
+      royaltyPercentage: Math.min(10, Math.max(2, royaltySettings?.royaltyPercentage || 5)),
+      maxResalePrice: Math.min(200, Math.max(100, royaltySettings?.maxResalePrice || 120)),
+      soulbound: royaltySettings?.soulbound || false,
+    };
+
+    // Parse promotion settings
+    const parsedPromotionSettings = {
+      tags: promotionSettings?.tags || [],
+      enableReferrals: promotionSettings?.enableReferrals || false,
+      referralCommission: Math.min(15, Math.max(1, promotionSettings?.referralCommission || 5)),
+      websiteUrl: promotionSettings?.websiteUrl || '',
+      socialLinks: promotionSettings?.socialLinks || {},
+    };
+
+    // Calculate total tickets for auto-approval check
+    const ticketTypesData = body.ticketTypes || [];
+    const totalTickets = ticketTypesData.reduce((sum: number, tt: any) => sum + (tt.totalSupply || 0), 0);
+    
+    // Auto-approve small events (<100 tickets)
+    const isAutoApproved = totalTickets < 100;
 
     // Create event
     const event = await Event.create({
       title,
       description,
-      category: category || 'OTHER',
+      category: category || 'Other',
+      venue,
+      city,
+      location,
+      image: image || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800',
+      imagePublicId: imagePublicId || '',
+      date: new Date(date),
+      time,
+      timezone: timezone || 'Asia/Kolkata',
       organizerId: auth.user!.id,
-      venue: {
-        name: venue.name,
-        address: venue.address,
-        city: venue.city,
-        state: venue.state,
-        country: venue.country || 'India',
-        capacity: venue.capacity,
-      },
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : new Date(startDate),
-      status: 'pending',
+      status: isAutoApproved ? 'approved' : 'pending',
+      royaltySettings: parsedRoyaltySettings,
+      promotionSettings: parsedPromotionSettings,
+      venueFee: venueFee || 0,
+      totalRevenue: 0,
+      totalRoyaltiesEarned: 0,
       createdAt: new Date(),
     });
 
-    // Create ticket types with unique token IDs
+    // Create ticket types if provided
     const createdTicketTypes = [];
-    for (const ticketType of ticketTypes) {
-      const tokenId = generateTokenId();
-      
-      const createdTicketType = await TicketType.create({
-        eventId: event._id,
-        name: ticketType.name,
-        description: ticketType.description,
-        price: ticketType.price,
-        currency: ticketType.currency || 'INR',
-        totalSupply: ticketType.totalSupply,
-        availableSupply: ticketType.totalSupply,
-        tokenId,
-        maxPerWallet: ticketType.maxPerWallet || 10,
-        saleStartDate: ticketType.saleStartDate ? new Date(ticketType.saleStartDate) : new Date(),
-        saleEndDate: ticketType.saleEndDate ? new Date(ticketType.saleEndDate) : new Date(startDate),
-        isActive: true,
-      });
 
-      createdTicketTypes.push(createdTicketType);
+    for (const tt of ticketTypesData) {
+      if (tt.name && tt.price > 0 && tt.totalSupply > 0) {
+        const tokenId = generateTokenId();
+        const ticketType = await TicketType.create({
+          eventId: event._id,
+          name: tt.name,
+          description: tt.description || '',
+          price: tt.price,
+          totalSupply: tt.totalSupply,
+          availableSupply: tt.totalSupply,
+          maxPerWallet: tt.maxPerWallet || 4,
+          tokenId,
+          isActive: true,
+          // Early bird pricing
+          pricingType: tt.pricingType || 'fixed',
+          earlyBirdPrice: tt.earlyBirdPrice || 0,
+          earlyBirdEndDate: tt.earlyBirdEndDate ? new Date(tt.earlyBirdEndDate) : null,
+          createdAt: new Date(),
+        });
+        createdTicketTypes.push({
+          id: ticketType._id,
+          name: ticketType.name,
+          price: ticketType.price,
+          totalSupply: ticketType.totalSupply,
+          availableSupply: ticketType.availableSupply,
+        });
+      }
     }
-
-    // Create royalty configuration
-    const defaultRoyalty = {
-      organizer: royaltySplit?.organizer || 70,
-      artist: royaltySplit?.artist || 15,
-      venue: royaltySplit?.venue || 10,
-      platform: royaltySplit?.platform || 5,
-    };
-
-    await Royalty.create({
-      eventId: event._id,
-      organizerId: auth.user!.id,
-      artistId: royaltySplit?.artistId,
-      venueOwnerId: royaltySplit?.venueOwnerId,
-      organizerPercentage: defaultRoyalty.organizer,
-      artistPercentage: defaultRoyalty.artist,
-      venuePercentage: defaultRoyalty.venue,
-      platformPercentage: defaultRoyalty.platform,
-      isActive: true,
-    });
 
     return NextResponse.json({
       success: true,
@@ -116,20 +139,21 @@ export async function POST(request: NextRequest) {
         description: event.description,
         category: event.category,
         venue: event.venue,
-        startDate: event.startDate,
-        endDate: event.endDate,
+        city: event.city,
+        location: event.location,
+        image: event.image,
+        date: event.date,
+        time: event.time,
+        timezone: event.timezone,
         status: event.status,
+        isAutoApproved,
+        royaltySettings: event.royaltySettings,
+        promotionSettings: event.promotionSettings,
+        ticketTypes: createdTicketTypes,
       },
-      ticketTypes: createdTicketTypes.map(tt => ({
-        id: tt._id,
-        name: tt.name,
-        price: tt.price,
-        currency: tt.currency,
-        totalSupply: tt.totalSupply,
-        tokenId: tt.tokenId,
-        maxPerWallet: tt.maxPerWallet,
-      })),
-      royaltySplit: defaultRoyalty,
+      message: isAutoApproved 
+        ? 'Event created and auto-approved! It\'s now live.' 
+        : 'Event submitted for review. You\'ll receive an email within 1-24 hours.',
     }, { status: 201 });
 
   } catch (error: any) {

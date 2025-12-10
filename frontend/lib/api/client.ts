@@ -20,7 +20,9 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    console.log('Getting token from localStorage:', !!token);
+    return token;
   }
 
   private getHeaders(includeAuth: boolean = true): HeadersInit {
@@ -32,6 +34,9 @@ class ApiClient {
       const token = this.getToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        console.log('Adding Authorization header with token');
+      } else {
+        console.log('No token available for Authorization header');
       }
     }
 
@@ -43,22 +48,30 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    
+    // Check if auth should be excluded (when headers are explicitly set to empty object)
+    const excludeAuth = options.headers && Object.keys(options.headers).length === 0;
+    
     const config: RequestInit = {
       ...options,
       headers: {
-        ...this.getHeaders(options.headers !== undefined),
+        ...this.getHeaders(!excludeAuth),
         ...options.headers,
       },
     };
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
+      
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('No token provided');
+        }
+        const data = await response.json().catch(() => ({}));
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
+      const data = await response.json();
       return data;
     } catch (error: any) {
       console.error('API Error:', error);
@@ -169,6 +182,49 @@ class ApiClient {
     return this.request('/api/admin/events/approve', {
       method: 'POST',
       body: JSON.stringify({ eventId, action, rejectionReason }),
+    });
+  }
+
+  // Image upload endpoints
+  async uploadImage(file: File, type: 'event' | 'avatar' | 'ticket' = 'event') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    const url = `${this.baseUrl}/api/upload/image`;
+    
+    // Get token for authentication
+    const token = this.getToken();
+    const headers: HeadersInit = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config: RequestInit = {
+      method: 'POST',
+      headers,
+      body: formData,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      throw error;
+    }
+  }
+
+  async deleteImage(publicId: string) {
+    return this.request(`/api/upload/image?publicId=${publicId}`, {
+      method: 'DELETE',
     });
   }
 }

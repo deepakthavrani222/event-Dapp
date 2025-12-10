@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db/connection';
 import { User } from '@/lib/db/models';
 import { generateToken } from '@/lib/auth/jwt';
 import { generateSmartWallet } from '@/lib/auth/wallet';
+import { getRoleForEmail } from '@/config/role-emails';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,12 +35,15 @@ export async function POST(request: NextRequest) {
       // Generate smart wallet for new user
       const wallet = generateSmartWallet(identifier);
 
+      // Determine role based on email address
+      const role = email ? getRoleForEmail(email) : 'BUYER';
+
       user = await User.create({
         email: email || undefined,
         phone: phone || undefined,
         name: name || 'Guest User',
         walletAddress: wallet.address,
-        role: 'BUYER', // Default role
+        role: role,
         isActive: true,
         createdAt: new Date(),
       });
