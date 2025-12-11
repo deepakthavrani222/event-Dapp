@@ -51,9 +51,21 @@ export async function mintTickets(
   amount: number
 ): Promise<{ txHash: string; success: boolean }> {
   try {
+    // Convert large tokenIds to smaller blockchain-safe values
+    let safeTokenId = tokenId;
+    if (tokenId.length > 10) {
+      // Hash large tokenId to create smaller value
+      const hash = tokenId.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      safeTokenId = Math.abs(hash % 1000000000).toString(); // Max 9 digits
+      console.log(`[BLOCKCHAIN] Converting large tokenId ${tokenId} -> ${safeTokenId}`);
+    }
+
     // For testing without deployed contract
     if (!BLOCKCHAIN_CONFIG.contracts.ticketNFT) {
-      console.log('[MOCK] Minting tickets:', { toAddress, tokenId, amount });
+      console.log('[MOCK] Minting tickets:', { toAddress, tokenId: safeTokenId, amount });
       return {
         txHash: `0x${Math.random().toString(16).substring(2)}`,
         success: true,
@@ -65,7 +77,7 @@ export async function mintTickets(
     
     const tx = await contract.mint(
       toAddress,
-      tokenId,
+      safeTokenId,
       amount,
       '0x' // empty data
     );

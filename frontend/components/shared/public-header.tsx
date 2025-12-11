@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRole } from "@/hooks/use-role"
 import { useAuth } from "@/lib/context/AuthContext"
+import { useArtistVerification } from "@/hooks/useArtistVerification"
 import { UserSidebar } from "./user-sidebar"
 
 import { Menu, X, MapPin, Search, Wallet } from "lucide-react"
@@ -14,15 +15,15 @@ import { motion, AnimatePresence } from "framer-motion"
 const guestNavItems = [
   { label: "For you", href: "/" },
   { label: "Events", href: "/events", active: true },
+  { label: "Artists", href: "/artists" },
   { label: "Activities", href: "/activities" },
-  { label: "Stores", href: "/stores" },
 ]
 
 const buyerNavItems = [
   { label: "For you", href: "/" },
   { label: "Events", href: "/buyer" },
+  { label: "Artists", href: "/artists" },
   { label: "My Tickets", href: "/my-tickets" },
-  { label: "Resale Market", href: "/buyer/resale" },
 ]
 
 export function PublicHeader() {
@@ -30,6 +31,7 @@ export function PublicHeader() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, isGuest } = useRole()
   const { user: authUser } = useAuth()
+  const { openVerificationFlow } = useArtistVerification()
   
   // Use different nav items based on login status
   const navItems = isGuest ? guestNavItems : buyerNavItems
@@ -76,14 +78,23 @@ export function PublicHeader() {
           </Button>
 
           {isGuest ? (
-            <Link href="/login">
+            <div className="hidden md:flex items-center gap-3">
               <Button
                 size="sm"
-                className="hidden md:flex gradient-purple-cyan hover:opacity-90 border-0 text-white rounded-full h-10 px-6 font-semibold neon-glow"
+                onClick={openVerificationFlow}
+                className="gradient-yellow-orange hover:opacity-90 border-0 text-black rounded-full h-10 px-6 font-bold"
               >
-                Sign In
+                ⭐ Verify as Artist
               </Button>
-            </Link>
+              <Link href="/login">
+                <Button
+                  size="sm"
+                  className="gradient-purple-cyan hover:opacity-90 border-0 text-white rounded-full h-10 px-6 font-semibold neon-glow"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            </div>
           ) : (
             <div className="hidden md:flex items-center gap-3">
               {/* Wallet Address */}
@@ -145,15 +156,26 @@ export function PublicHeader() {
                 </Link>
               ))}
 
-              {/* Mobile Sign In */}
+              {/* Mobile Auth Buttons */}
               {isGuest ? (
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                <div className="space-y-3 mt-4">
                   <Button
-                    className="w-full mt-4 gradient-purple-cyan hover:opacity-90 border-0 text-white h-12 font-semibold neon-glow"
+                    className="w-full gradient-yellow-orange hover:opacity-90 border-0 text-black h-12 font-bold"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openVerificationFlow();
+                    }}
                   >
-                    Sign In
+                    ⭐ Verify as Artist
                   </Button>
-                </Link>
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button
+                      className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white h-12 font-semibold neon-glow"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
               ) : (
                 <div className="mt-4 space-y-3">
                   {/* Mobile User Info */}

@@ -1,10 +1,5 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/organizer/page": "app/organizer/page.js",
-  "/organizer/earnings/page": "app/organizer/earnings/page.js",
-  "/organizer/create/page": "app/organizer/create/page.js",
-  "/admin/events/page": "app/admin/events/page.js",
-  "/organizer/events/[id]/page": "app/organizer/events/[id]/page.js",
-  "/organizer/settings/page": "app/organizer/settings/page.js"
+  "/page": "app/page.js",
+  "/my-tickets/page": "app/my-tickets/page.js"
 }

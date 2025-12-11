@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { apiClient } from '@/lib/api/client'
+import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets'
 
 interface EnhancedPurchaseDialogProps {
   selections: any
@@ -34,16 +36,54 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
   const handlePurchase = async () => {
     setProcessing(true)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setProcessing(false)
-    setStep(3)
-    
-    // Auto close after success
-    setTimeout(() => {
-      onSuccess()
-    }, 3000)
+    try {
+      // Use real API call instead of mock
+      // Handle multiple ticket selections by purchasing each one
+      const purchasePromises = selections.selections.map((selection: any) => 
+        apiClient.purchaseTickets({
+          ticketTypeId: selection.ticketTypeId,
+          quantity: selection.quantity,
+          paymentMethod: paymentMethod.toUpperCase(),
+          referralCode: undefined, // Could be added to form later
+        })
+      );
+
+      const responses = await Promise.all(purchasePromises);
+      const allSuccessful = responses.every(response => response.success);
+
+      if (!allSuccessful) {
+        const failedResponses = responses.filter(r => !r.success);
+        throw new Error(failedResponses[0]?.error || 'Some purchases failed');
+      }
+
+      if (allSuccessful) {
+        console.log('Purchase successful! Refreshing tickets...');
+        
+        // Trigger My Tickets refresh immediately
+        notifyTicketPurchased();
+        
+        // Also trigger global refresh events
+        window.dispatchEvent(new CustomEvent('refreshTickets'));
+        
+        // Set localStorage flag for cross-tab communication
+        localStorage.setItem('ticketPurchased', Date.now().toString());
+        
+        // Refresh triggers sent
+        
+        setProcessing(false)
+        setStep(3)
+        
+        // Auto close after success
+        setTimeout(() => {
+          onSuccess()
+        }, 3000)
+      }
+    } catch (error: any) {
+      console.error('🎫 Enhanced Purchase failed:', error);
+      setProcessing(false);
+      // Could add error state here
+      alert(`Purchase failed: ${error.message}`);
+    }
   }
 
   const fees = {

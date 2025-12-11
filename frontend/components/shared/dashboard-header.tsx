@@ -22,6 +22,9 @@ import {
   Shield,
   ScanLine,
   Wallet,
+  MessageCircle,
+  Crown,
+  Award,
 } from "lucide-react"
 import { NotificationBell } from "./notification-bell"
 import { motion, AnimatePresence } from "framer-motion"
@@ -54,9 +57,11 @@ const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon
     { label: "Venues", href: "/venue-owner/venues", icon: Building },
   ],
   artist: [
-    { label: "Profile", href: "/artist", icon: User },
-    { label: "Golden Pass", href: "/artist/golden-pass", icon: Ticket },
-    { label: "Fans", href: "/artist/fans", icon: Users },
+    { label: "Dashboard", href: "/artist", icon: LayoutDashboard },
+    { label: "Analytics", href: "/artist?tab=analytics", icon: TrendingUp },
+    { label: "Fan Messages", href: "/artist?tab=messaging", icon: MessageCircle },
+    { label: "Golden Tickets", href: "/artist?tab=golden-tickets", icon: Crown },
+    { label: "Verification", href: "/artist?tab=verification", icon: Award },
   ],
   reseller: [
     { label: "Dashboard", href: "/reseller", icon: LayoutDashboard },

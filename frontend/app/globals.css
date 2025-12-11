@@ -76,6 +76,14 @@
     background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
   }
 
+  .gradient-yellow-orange {
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+  }
+
+  .gradient-blue-purple {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  }
+
   .text-gradient-neon {
     background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
     -webkit-background-clip: text;

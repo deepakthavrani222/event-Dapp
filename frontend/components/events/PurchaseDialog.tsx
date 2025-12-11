@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { apiClient } from '@/lib/api/client';
+import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,19 @@ export function PurchaseDialog({
       });
 
       if (response.success) {
+        console.log('Purchase successful! Refreshing tickets...');
+        
+        // Trigger My Tickets refresh
+        notifyTicketPurchased();
+        
+        // Also trigger global refresh events
+        window.dispatchEvent(new CustomEvent('refreshTickets'));
+        
+        // Set localStorage flag for cross-tab communication
+        localStorage.setItem('ticketPurchased', Date.now().toString());
+        
+        // Refresh triggers sent
+        
         onSuccess();
       } else {
         setError(response.error || 'Purchase failed');

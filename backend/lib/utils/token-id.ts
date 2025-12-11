@@ -1,13 +1,16 @@
 /**
  * Generate unique ERC-1155 token ID
- * Format: timestamp + random number
+ * Format: Simple incremental number with random component
+ * Keeps numbers smaller for blockchain compatibility
  */
 export function generateTokenId(): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000000000);
+  // Use last 6 digits of timestamp + 4 digit random
+  // This creates 10-digit numbers which are blockchain-safe
+  const timestamp = Date.now() % 1000000; // Last 6 digits
+  const random = Math.floor(Math.random() * 10000); // 4 digits
   
-  // Combine timestamp and random for uniqueness
-  const tokenId = `${timestamp}${random}`;
+  // Combine for uniqueness (10 digits max)
+  const tokenId = `${timestamp}${random.toString().padStart(4, '0')}`;
   
   return tokenId;
 }

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { apiClient } from '@/lib/api/client';
+import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets';
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -22,7 +24,6 @@ import {
   Star
 } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
-import { apiClient } from '@/lib/api/client';
 
 interface GuestBuyingFlowProps {
   event: any;
@@ -95,10 +96,38 @@ export function GuestBuyingFlow({
         totalAmount
       };
       
-      // This would normally call the actual purchase API
-      // const response = await apiClient.purchaseTickets(purchaseData);
-      
-      setStep('success');
+      // Use real API call for guest purchases
+      const purchasePromises = ticketSelections.map((selection: any) => 
+        apiClient.purchaseTickets({
+          ticketTypeId: selection.ticketTypeId,
+          quantity: selection.quantity,
+          paymentMethod: paymentMethod.toUpperCase(),
+          referralCode: undefined,
+        })
+      );
+
+      const responses = await Promise.all(purchasePromises);
+      const allSuccessful = responses.every(response => response.success);
+
+      if (allSuccessful) {
+        console.log('Purchase successful! Refreshing tickets...');
+        
+        // Trigger My Tickets refresh immediately
+        notifyTicketPurchased();
+        
+        // Also trigger global refresh events
+        window.dispatchEvent(new CustomEvent('refreshTickets'));
+        
+        // Set localStorage flag for cross-tab communication
+        localStorage.setItem('ticketPurchased', Date.now().toString());
+        
+        // Refresh triggers sent
+        
+        setStep('success');
+      } else {
+        const failedResponses = responses.filter(r => !r.success);
+        throw new Error(failedResponses[0]?.error || 'Some purchases failed');
+      }
       
       // Auto-close after showing success
       setTimeout(() => {

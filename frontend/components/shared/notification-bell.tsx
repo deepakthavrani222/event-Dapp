@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Check, Ticket, DollarSign, CheckCircle, XCircle, Trophy, Info } from 'lucide-react';
+import { Bell, Check, Ticket, DollarSign, CheckCircle, XCircle, Trophy, Info, MessageCircle, Crown, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FanNotifications } from '../notifications/FanNotifications';
+import { useRole } from '@/hooks/use-role';
 
 interface Notification {
   id: string;
@@ -24,6 +26,9 @@ const typeIcons: Record<string, React.ReactNode> = {
   EVENT_REJECTED: <XCircle className="h-4 w-4 text-red-400" />,
   MILESTONE: <Trophy className="h-4 w-4 text-yellow-400" />,
   SYSTEM: <Info className="h-4 w-4 text-blue-400" />,
+  ARTIST_MESSAGE: <MessageCircle className="h-4 w-4 text-purple-400" />,
+  NFT_DROP: <Gift className="h-4 w-4 text-yellow-400" />,
+  GOLDEN_TICKET: <Crown className="h-4 w-4 text-yellow-400" />,
 };
 
 export function NotificationBell() {
@@ -31,6 +36,8 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showFanNotifications, setShowFanNotifications] = useState(false);
+  const { role } = useRole();
 
   useEffect(() => {
     fetchNotifications();
@@ -82,21 +89,34 @@ export function NotificationBell() {
     return date.toLocaleDateString();
   };
 
+  // Mock fan notification count for buyers
+  const fanNotificationCount = role === 'buyer' ? 2 : 0;
+  const totalUnreadCount = unreadCount + fanNotificationCount;
+
+  const handleBellClick = () => {
+    if (role === 'buyer') {
+      setShowFanNotifications(true);
+    } else {
+      setIsOpen(!isOpen);
+    }
+  };
+
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative text-gray-400 hover:text-white hover:bg-white/5"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </Button>
+    <>
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBellClick}
+          className="relative text-gray-400 hover:text-white hover:bg-white/5"
+        >
+          <Bell className="h-5 w-5" />
+          {totalUnreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">
+              {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+            </span>
+          )}
+        </Button>
 
       <AnimatePresence>
         {isOpen && (
@@ -189,6 +209,13 @@ export function NotificationBell() {
           </>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+
+      {/* Fan Notifications Panel */}
+      <FanNotifications 
+        isOpen={showFanNotifications} 
+        onClose={() => setShowFanNotifications(false)} 
+      />
+    </>
   );
 }

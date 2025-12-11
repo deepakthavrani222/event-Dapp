@@ -1,35 +1,39 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface ITransaction extends Document {
-  userId: Types.ObjectId;
-  ticketId?: Types.ObjectId;
-  type: 'purchase' | 'resale' | 'refund';
-  amount: number;
+  buyerId: Types.ObjectId;
+  eventId: Types.ObjectId;
+  ticketTypeId: Types.ObjectId;
+  quantity: number;
+  totalAmount: number;
+  currency: string;
+  platformFee: number;
+  referralCommission: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  paymentMethod: string;
   txHash?: string;
-  referralCode?: string;
-  status: 'pending' | 'completed' | 'failed';
+  referralId?: Types.ObjectId;
   createdAt: Date;
-  completedAt?: Date;
 }
 
 const TransactionSchema = new Schema<ITransaction>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    ticketId: { type: Schema.Types.ObjectId, ref: 'Ticket' },
-    type: {
-      type: String,
-      enum: ['purchase', 'resale', 'refund'],
-      required: true,
-    },
-    amount: { type: Number, required: true },
-    txHash: { type: String },
-    referralCode: { type: String },
+    buyerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true },
+    ticketTypeId: { type: Schema.Types.ObjectId, ref: 'TicketType', required: true },
+    quantity: { type: Number, required: true },
+    totalAmount: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    platformFee: { type: Number, default: 0 },
+    referralCommission: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'failed'],
-      default: 'pending',
+      enum: ['PENDING', 'COMPLETED', 'FAILED'],
+      default: 'PENDING',
     },
-    completedAt: { type: Date },
+    paymentMethod: { type: String, required: true },
+    txHash: { type: String },
+    referralId: { type: Schema.Types.ObjectId, ref: 'Referral' },
   },
   {
     timestamps: true,

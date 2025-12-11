@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { EnhancedPurchaseDialog } from "@/components/events/EnhancedPurchaseDialog"
 import { GuestBuyingFlow } from "@/components/buyer/GuestBuyingFlow"
 import { useAuth } from "@/lib/context/AuthContext"
+import { Footer } from "@/components/shared/footer"
 
 interface PremiumEventDetailProps {
   event: any
@@ -132,7 +133,7 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
         <div className="absolute bottom-20 right-20 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-6 h-full flex flex-col justify-between py-8">
+        <div className="relative z-10 container mx-auto px-6 h-full flex flex-col justify-start py-8">
           {/* Top Navigation */}
           <div className="flex items-center justify-between">
             <Button
@@ -162,65 +163,6 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
               </Button>
             </div>
           </div>
-
-          {/* Event Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6"
-          >
-            <div className="space-y-4">
-              <Badge className="bg-primary/20 text-primary border-primary/30 backdrop-blur-sm px-4 py-2 text-sm font-semibold">
-                {event.category}
-              </Badge>
-
-              <h1 className="text-5xl md:text-7xl font-black text-white leading-tight">
-                {event.title}
-              </h1>
-
-              {event.artist && (
-                <p className="text-2xl text-gray-300 font-medium">
-                  by {event.artist}
-                </p>
-              )}
-            </div>
-
-            {/* Quick Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl">
-              <div className="glass-card border-white/20 backdrop-blur-md bg-white/5 p-4 rounded-xl">
-                <div className="flex items-center gap-3 text-white">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-gray-300">Date</p>
-                    <p className="font-semibold">{formatDate(event.startDate || event.date)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-card border-white/20 backdrop-blur-md bg-white/5 p-4 rounded-xl">
-                <div className="flex items-center gap-3 text-white">
-                  <Clock className="h-5 w-5 text-secondary" />
-                  <div>
-                    <p className="text-sm text-gray-300">Time</p>
-                    <p className="font-semibold">{formatTime(event.startDate || event.date, event.endDate)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-card border-white/20 backdrop-blur-md bg-white/5 p-4 rounded-xl">
-                <div className="flex items-center gap-3 text-white">
-                  <MapPin className="h-5 w-5 text-yellow-400" />
-                  <div>
-                    <p className="text-sm text-gray-300">Venue</p>
-                    <p className="font-semibold line-clamp-1">
-                      {typeof event.venue === 'object' ? event.venue.name : event.venue}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
 
@@ -287,22 +229,65 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
               )}
             </motion.div>
 
-            {/* Event Gallery Placeholder */}
+            {/* Event Info Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-xl"
+              className="space-y-6"
             >
-              <h3 className="text-2xl font-bold text-white mb-4">Event Gallery</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center">
-                    <span className="text-gray-400">Photo {i}</span>
+              <div className="space-y-4">
+                <Badge className="bg-primary/20 text-primary border-primary/30 backdrop-blur-sm px-4 py-2 text-sm font-semibold">
+                  {event.category}
+                </Badge>
+
+                <h1 className="text-4xl md:text-6xl font-black text-white leading-tight">
+                  {event.title}
+                </h1>
+
+                {event.artist && (
+                  <p className="text-xl text-gray-300 font-medium">
+                    by {event.artist}
+                  </p>
+                )}
+              </div>
+
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
+                  <div className="flex items-center gap-3 text-white">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-gray-300">Date</p>
+                      <p className="font-semibold">{formatDate(event.startDate || event.date)}</p>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
+                  <div className="flex items-center gap-3 text-white">
+                    <Clock className="h-5 w-5 text-secondary" />
+                    <div>
+                      <p className="text-sm text-gray-300">Time</p>
+                      <p className="font-semibold">{formatTime(event.startDate || event.date, event.endDate)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
+                  <div className="flex items-center gap-3 text-white">
+                    <MapPin className="h-5 w-5 text-yellow-400" />
+                    <div>
+                      <p className="text-sm text-gray-300">Venue</p>
+                      <p className="font-semibold line-clamp-1">
+                        {typeof event.venue === 'object' ? event.venue.name : event.venue}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
+
           </div>
 
           {/* Ticket Selection */}
@@ -573,6 +558,9 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
           }}
         />
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

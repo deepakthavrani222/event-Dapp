@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +17,10 @@ import {
   User,
   Ticket,
   Shield,
-  Sparkles
+  Sparkles,
+  Download
 } from 'lucide-react';
+import QRCodeReact from 'react-qr-code';
 import { format } from 'date-fns';
 
 interface TicketEntryScreenProps {
@@ -43,6 +45,7 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
   const [brightness, setBrightness] = useState(100);
   const [isVerified, setIsVerified] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   // Auto-maximize brightness for QR visibility
   useEffect(() => {
@@ -77,6 +80,53 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
       document.exitFullscreen();
       setIsFullscreen(false);
     }
+  };
+
+  const downloadQRCode = () => {
+    if (!qrRef.current) return;
+    
+    const svg = qrRef.current.querySelector('svg');
+    if (!svg) return;
+
+    // Create canvas to convert SVG to image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = 512;
+      canvas.height = 512;
+      
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw QR code
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ticket-qr-${ticket.eventTitle.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+      
+      URL.revokeObjectURL(svgUrl);
+    };
+    
+    img.src = svgUrl;
   };
 
   // Welcome screen after successful scan
@@ -185,6 +235,15 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
           <Button
             variant="ghost"
             size="icon"
+            onClick={downloadQRCode}
+            className="text-white hover:bg-white/10"
+            title="Download QR Code"
+          >
+            <Download className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleFullscreen}
             className="text-white hover:bg-white/10"
           >
@@ -238,17 +297,28 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
         >
           {/* QR Container */}
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl">
-            <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center bg-white">
-              {/* QR Code - In real app, use actual QR library */}
-              <div className="relative w-full h-full">
-                <QrCode className="w-full h-full text-black" strokeWidth={0.5} />
-                {/* Center logo */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                    <Ticket className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-              </div>
+            <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center bg-white" ref={qrRef}>
+              {/* Real QR Code */}
+              <QRCodeReact
+                value={JSON.stringify({
+                  ticketId: ticket.id,
+                  tokenId: ticket.tokenId,
+                  eventTitle: ticket.eventTitle,
+                  venue: ticket.venue,
+                  date: ticket.date,
+                  owner: ticket.ownerName,
+                  seatNumber: ticket.seatNumber,
+                  ticketType: ticket.ticketType,
+                  signature: `TIKR_${ticket.id}_${ticket.tokenId}`
+                })}
+                size={256}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                viewBox="0 0 256 256"
+                fgColor="#000000"
+                bgColor="#ffffff"
+                level="H"
+                includeMargin={false}
+              />
             </div>
           </div>
 
@@ -322,17 +392,27 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
 
       {/* Bottom Actions */}
       <div className="p-4 bg-black/50 space-y-3">
-        {/* Demo: Simulate verification */}
-        <Button
-          onClick={simulateVerification}
-          className="w-full h-14 bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-bold text-lg rounded-xl"
-        >
-          <Volume2 className="h-5 w-5 mr-2" />
-          Demo: Simulate Scan
-        </Button>
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            onClick={downloadQRCode}
+            className="h-14 bg-gradient-to-r from-purple-500 to-cyan-500 hover:opacity-90 text-white font-bold text-lg rounded-xl"
+          >
+            <Download className="h-5 w-5 mr-2" />
+            Download QR
+          </Button>
+          
+          <Button
+            onClick={simulateVerification}
+            className="h-14 bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white font-bold text-lg rounded-xl"
+          >
+            <Volume2 className="h-5 w-5 mr-2" />
+            Demo Scan
+          </Button>
+        </div>
         
         <p className="text-center text-xs text-gray-500">
-          Screen brightness maximized for better scanning
+          Screen brightness maximized for better scanning • QR contains encrypted ticket data
         </p>
       </div>
     </div>

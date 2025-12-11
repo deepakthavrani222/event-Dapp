@@ -339,7 +339,7 @@ export default function BecomeOrganizerPage() {
               <p className="text-sm text-gray-400">Resale Royalties</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-white">< 5min</p>
+              <p className="text-3xl font-bold text-white">&lt; 5min</p>
               <p className="text-sm text-gray-400">Instant Payouts</p>
             </div>
           </div>

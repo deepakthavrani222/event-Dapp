@@ -5,13 +5,15 @@ import { apiClient } from "@/lib/api/client"
 import type { Event } from "@/lib/types"
 import { PublicHeader } from "@/components/shared/public-header"
 import { OpenSeaEventCard } from "@/components/shared/opensea-event-card"
+import { HorizontalEventCarousel } from "@/components/shared/horizontal-event-carousel"
+import { EnhancedEventCarousel } from "@/components/shared/enhanced-event-carousel"
 import { CategoryCard } from "@/components/shared/category-card"
-import { ArtistCard } from "@/components/shared/artist-card"
-import { CitySelector } from "@/components/shared/city-selector-modal"
+import { IntegratedArtistHub } from "@/components/shared/integrated-artist-hub"
+
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Filter, ChevronRight, Search, MapPin, Calendar, Users } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Footer } from "@/components/shared/footer"
@@ -27,35 +29,13 @@ const categories = [
   { title: "Social Mixers", icon: "🥂", href: "/events?category=social" },
 ]
 
-const artists = [
-  { name: "Karan Aujla", image: "/placeholder.svg", color: "#FF6B6B" },
-  { name: "Sunidhi Chauhan", image: "/placeholder.svg", color: "#4ECDC4" },
-  { name: "Ilaiyaraaja", image: "/placeholder.svg", color: "#FFE66D" },
-  { name: "Jubin Nautiyal", image: "/placeholder.svg", color: "#C7B3FF" },
-  { name: "Shreya Ghoshal", image: "/placeholder.svg", color: "#FF8B94" },
-  { name: "Monolink", image: "/placeholder.svg", color: "#D4A574" },
-]
 
-const filters = ["Today", "Tomorrow", "This Weekend", "Under 10 km", "Music", "Nightlife"]
+
+
 
 export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showCitySelector, setShowCitySelector] = useState(false)
-  const [selectedCity, setSelectedCity] = useState("All Cities")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [selectedDate, setSelectedDate] = useState("all")
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-
-  const cities = ["All Cities", "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Goa"]
-  const dateFilters = [
-    { value: "all", label: "All Dates" },
-    { value: "today", label: "Today" },
-    { value: "tomorrow", label: "Tomorrow" },
-    { value: "weekend", label: "This Weekend" },
-    { value: "week", label: "This Week" },
-    { value: "month", label: "This Month" }
-  ]
 
   useEffect(() => {
     async function fetchEvents() {
@@ -71,16 +51,16 @@ export default function HomePage() {
     fetchEvents()
   }, [])
 
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (event.artist && event.artist.toLowerCase().includes(searchQuery.toLowerCase()))
-    
-    const matchesCity = selectedCity === "All Cities" || event.city === selectedCity
-    const matchesCategory = selectedCategory === "all" || event.category.toLowerCase() === selectedCategory.toLowerCase()
-    
-    return matchesSearch && matchesCity && matchesCategory
-  })
+  // Show all events without filtering
+  const filteredEvents = events
+
+  // Get unique categories from events
+  const getUniqueCategories = () => {
+    const categories = [...new Set(events.map(event => event.category).filter(Boolean))]
+    return categories.slice(0, 6) // Limit to 6 categories for better layout
+  }
+
+  const uniqueCategories = getUniqueCategories()
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,7 +86,7 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="container relative z-10 py-20 px-6 md:px-8 lg:px-12">
+        <div className="container relative z-10 py-20 px-12 mx-auto max-w-7xl">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <motion.div 
@@ -237,113 +217,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Enhanced Search Section */}
-      <section className="container py-20 px-6 md:px-8 lg:px-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-            Find Your Next <span className="text-gradient-neon">Experience</span>
-          </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Search by event, artist, or city. No sign-up required to browse.
-          </p>
-        </motion.div>
 
-        {/* Search Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-2xl mb-12"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search events, artists..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
-              />
-            </div>
-
-            {/* City Filter */}
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 text-white rounded-lg h-12 appearance-none"
-              >
-                {cities.map((city) => (
-                  <option key={city} value={city} className="bg-gray-800 text-white">{city}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category Filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 text-white rounded-lg h-12 appearance-none"
-              >
-                <option value="all" className="bg-gray-800 text-white">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.title} value={category.title.toLowerCase()} className="bg-gray-800 text-white">
-                    {category.icon} {category.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date Filter */}
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 text-white rounded-lg h-12 appearance-none"
-              >
-                {dateFilters.map((filter) => (
-                  <option key={filter.value} value={filter.value} className="bg-gray-800 text-white">
-                    {filter.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Search Results Count */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Users className="h-4 w-4" />
-              <span>{filteredEvents.length} events found</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearchQuery("")
-                setSelectedCity("All Cities")
-                setSelectedCategory("all")
-                setSelectedDate("all")
-              }}
-              className="text-gray-400 hover:text-white"
-            >
-              Clear all filters
-            </Button>
-          </div>
-        </motion.div>
-      </section>
 
       {/* Explore Categories */}
-      <section className="container py-20 px-6 md:px-8 lg:px-12">
+      <section className="container py-20 px-12 mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-4xl md:text-5xl font-black text-white">
             Explore <span className="text-gradient-neon">Live</span>
@@ -364,135 +241,66 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Artists Section */}
-      <section className="py-20">
-        <div className="container px-6 md:px-8 lg:px-12">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-4xl md:text-5xl font-black text-white">Featured Artists</h2>
-            <Button variant="link" className="text-cyan-400 hover:text-cyan-300 gap-2">
-              View all
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+      {/* Integrated Artist Hub */}
+      <IntegratedArtistHub />
 
-        <div className="container px-6 md:px-8 lg:px-12">
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
-          {artists.map((artist, idx) => (
-            <motion.div
-              key={artist.name}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <ArtistCard {...artist} />
-            </motion.div>
-          ))}
-          </div>
-        </div>
-      </section>
+      <section className="container py-20 px-12 mx-auto max-w-7xl space-y-16">
+        {loading ? (
+          <div className="text-center py-12 text-gray-400">Loading events...</div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">No events found</div>
+        ) : (
+          <>
+            {/* Featured Collections - Large Cards */}
+            <EnhancedEventCarousel
+              title="Featured Collections"
+              subtitle="This week's curated premium experiences"
+              events={filteredEvents.slice(0, 6)}
+              variant="large"
+            />
 
-      <section className="container py-20 px-6 md:px-8 lg:px-12 space-y-16">
-        {/* Featured Collections */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-black text-white mb-1">Featured Collections</h2>
-              <p className="text-gray-400 text-sm">This week's curated collections</p>
-            </div>
-          </div>
+            {/* Dynamic Category Sections */}
+            {uniqueCategories.map((category, index) => {
+              // Use small cards only for Sports and Music/Concert events
+              const useSmallCards = category.toLowerCase() === 'sports' || 
+                                   category.toLowerCase() === 'music' || 
+                                   category.toLowerCase() === 'concert'
+              
+              return (
+                <EnhancedEventCarousel
+                  key={category}
+                  title={`${category} Events`}
+                  subtitle={`Best ${category.toLowerCase()} experiences`}
+                  events={filteredEvents}
+                  variant={useSmallCards ? "compact" : "large"}
+                  categoryFilter={category}
+                />
+              )
+            })}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {filteredEvents.slice(0, 4).map((event) => (
-              <OpenSeaEventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </div>
+            {/* Trending Now - Trending Cards */}
+            {filteredEvents.length > 8 && (
+              <EnhancedEventCarousel
+                title="Trending Now"
+                subtitle="🔥 Most popular events this week"
+                events={filteredEvents.slice(8, 16)}
+                variant="trending"
+              />
+            )}
 
-        {/* Featured Drops */}
-        {!loading && filteredEvents.length > 4 && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-3xl font-black text-white mb-1">Featured Drops</h2>
-                <p className="text-gray-400 text-sm">This week's curated live and upcoming drops</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {filteredEvents.slice(4, 8).map((event) => (
-                <OpenSeaEventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </div>
+            {/* All Events - Default Cards */}
+            <EnhancedEventCarousel
+              title="All Events"
+              subtitle="Browse all available events"
+              events={filteredEvents}
+              variant="default"
+            />
+          </>
         )}
-
-        {!loading && filteredEvents.length > 8 && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-3xl font-black text-white mb-1">Trending Events</h2>
-                <p className="text-gray-400 text-sm">Most popular events this week</p>
-              </div>
-              <Button variant="link" className="text-cyan-400 hover:text-cyan-300 gap-2">
-                View all
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {filteredEvents.slice(8, 12).map((event) => (
-                <OpenSeaEventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-black text-white mb-1">All Events</h2>
-              <p className="text-gray-400 text-sm">Browse all available events</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="glass-card border-white/20 text-white hover:bg-white/10 gap-2 rounded-full bg-transparent"
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-          </div>
-
-          {/* Filter Chips */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-            {filters.map((filter) => (
-              <Button
-                key={filter}
-                size="sm"
-                className="glass-card border-white/20 text-white hover:bg-purple-500/20 hover:border-purple-500/50 whitespace-nowrap rounded-full"
-              >
-                {filter}
-              </Button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="text-center py-12 text-gray-400">Loading events...</div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">No events found</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {filteredEvents.map((event) => (
-                <OpenSeaEventCard key={event.id} event={event} />
-              ))}
-            </div>
-          )}
-        </div>
       </section>
 
       {/* Become an Organizer CTA */}
-      <section className="container py-20 px-6 md:px-8 lg:px-12">
+      <section className="container py-20 px-12 mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -539,8 +347,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* City Selector Modal */}
-      <CitySelector open={showCitySelector} onClose={() => setShowCitySelector(false)} />
+
       
       {/* Footer */}
       <Footer />

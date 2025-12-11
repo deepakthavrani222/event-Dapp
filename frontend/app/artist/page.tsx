@@ -1,178 +1,360 @@
-"use client"
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Users, Heart, MessageSquare, Sparkles, Crown, Send } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Star, 
+  Users, 
+  DollarSign, 
+  TrendingUp, 
+  MessageCircle, 
+  Calendar,
+  Award,
+  Crown,
+  Sparkles,
+  Music,
+  Heart,
+  Eye,
+  Send,
+  Settings,
+  BarChart3,
+  Ticket,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from 'lucide-react';
+import { useAuth } from '@/lib/context/AuthContext';
+import { apiClient } from '@/lib/api/client';
+import { ArtistProfileSetup } from '@/components/artist/ArtistProfileSetup';
+import { ArtistVerification } from '@/components/artist/ArtistVerification';
+import { ArtistAnalytics } from '@/components/artist/ArtistAnalytics';
+import { ArtistMessaging } from '@/components/artist/ArtistMessaging';
+import { GoldenTicketCreator } from '@/components/artist/GoldenTicketCreator';
 
-export default function ArtistPage() {
-  const stats = [
-    { label: "Total Fans", value: "12.5K", icon: Users, color: "text-primary" },
-    { label: "Engagement Rate", value: "8.4%", icon: Heart, color: "text-secondary" },
-    { label: "Golden Pass Holders", value: "342", icon: Crown, color: "text-neon-pink" },
-    { label: "Messages Sent", value: "48", icon: MessageSquare, color: "text-neon-teal" },
-  ]
+interface ArtistProfile {
+  id: string;
+  artistName: string;
+  realName: string;
+  bio: string;
+  genre: string[];
+  socialLinks: any;
+  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verifiedAt?: string;
+  totalEvents: number;
+  totalTicketsSold: number;
+  totalRevenue: number;
+  fanCount: number;
+  averageRating: number;
+  royaltyPercentage: number;
+  canCreateGoldenTickets: boolean;
+  messagingEnabled: boolean;
+  goldenTicketPerks: string[];
+  createdAt: string;
+}
 
-  return (
-    <div className="container py-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold mb-2"
-          >
-            Artist Profile
-          </motion.h1>
-          <p className="text-muted-foreground">Connect with your fans and manage exclusive content</p>
-        </div>
-        <Button className="gap-2 bg-gradient-purple-teal hover:opacity-90 border-0">
-          <Sparkles className="h-4 w-4" />
-          Edit Profile
-        </Button>
-      </div>
+export default function ArtistDashboard() {
+  const { user } = useAuth();
+  const [artist, setArtist] = useState<ArtistProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: idx * 0.1 }}
-          >
-            <Card className="bg-card/50 border-border/50 backdrop-blur">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 bg-primary/10 rounded-lg ${stat.color}`}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                <p className="text-3xl font-bold">{stat.value}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+  useEffect(() => {
+    if (user) {
+      fetchArtistProfile();
+    }
+  }, [user]);
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Golden Pass Drop */}
-        <Card className="bg-card/50 border-border/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-neon-pink" />
-              Golden Pass Drop
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-6 bg-gradient-to-br from-neon-pink/20 to-primary/20 rounded-lg border border-neon-pink/30 text-center space-y-3">
-              <Crown className="h-12 w-12 mx-auto text-neon-pink" />
-              <h3 className="text-xl font-bold">Launch Exclusive Golden Pass</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Give your superfans lifetime access to all your events with special perks and behind-the-scenes content.
-              </p>
-            </div>
+  const fetchArtistProfile = async () => {
+    try {
+      const response = await apiClient.request('/api/artist/profile', {
+        method: 'GET'
+      });
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Pass Name</label>
-                <Input placeholder="e.g., VIP Golden Circle" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Price (INR)</label>
-                <Input type="number" placeholder="e.g., 50000" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Total Supply</label>
-                <Input type="number" placeholder="e.g., 100" />
-              </div>
-            </div>
+      if (response.success) {
+        setArtist(response.artist);
+      } else {
+        // Artist profile doesn't exist yet
+        setArtist(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch artist profile:', error);
+      setArtist(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <Button className="w-full bg-gradient-purple-pink hover:opacity-90 border-0 gap-2">
-              <Sparkles className="h-4 w-4" />
-              Launch Golden Pass
-            </Button>
-          </CardContent>
-        </Card>
+  const getVerificationStatusBadge = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return (
+          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Verified Artist
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+            <Clock className="h-3 w-3 mr-1" />
+            Verification Pending
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Verification Rejected
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
 
-        {/* Message All Fans */}
-        <Card className="bg-card/50 border-border/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-secondary" />
-              Message All Fans
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Subject</label>
-                <Input placeholder="e.g., New Concert Announcement!" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Message</label>
-                <Textarea placeholder="Write a personal message to your fans..." rows={8} className="resize-none" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>This will be sent to 12,543 fans</span>
-            </div>
-
-            <Button className="w-full bg-gradient-purple-teal hover:opacity-90 border-0 gap-2">
-              <Send className="h-4 w-4" />
-              Send Message
-            </Button>
-
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Your fans will receive this as a notification and email. Use this feature responsibly to maintain
-                engagement.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card className="bg-card/50 border-border/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle>Recent Fan Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[
-              { fan: "Rahul M.", action: "purchased Golden Pass", time: "2 min ago" },
-              { fan: "Priya S.", action: "bought 2 tickets to Mumbai show", time: "15 min ago" },
-              { fan: "Arjun K.", action: "sent a message", time: "1 hour ago" },
-              { fan: "Sneha P.", action: "shared your event", time: "3 hours ago" },
-            ].map((activity, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-primary/50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-purple-teal flex items-center justify-center text-white font-semibold">
-                    {activity.fan[0]}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{activity.fan}</p>
-                    <p className="text-sm text-muted-foreground">{activity.action}</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {activity.time}
-                </Badge>
-              </div>
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-white/10 rounded w-64"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // If no artist profile exists, show setup
+  if (!artist) {
+    return <ArtistProfileSetup onProfileCreated={fetchArtistProfile} />;
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-bold text-white">{artist.artistName}</h1>
+            {getVerificationStatusBadge(artist.verificationStatus)}
+            {artist.canCreateGoldenTickets && (
+              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                <Crown className="h-3 w-3 mr-1" />
+                Golden Tickets Enabled
+              </Badge>
+            )}
+          </div>
+          <p className="text-gray-400">
+            {artist.genre.join(', ')} • {artist.fanCount.toLocaleString()} fans • {artist.royaltyPercentage}% royalties
+          </p>
+        </div>
+        
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setActiveTab('settings')}
+            variant="outline"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+          
+          {artist.verificationStatus !== 'verified' && (
+            <Button
+              onClick={() => setActiveTab('verification')}
+              className="gradient-purple-cyan hover:opacity-90 border-0 text-white"
+            >
+              <Award className="h-4 w-4 mr-2" />
+              Get Verified
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="glass-card border-white/20 bg-white/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Total Revenue</p>
+                <p className="text-2xl font-bold text-white">₹{artist.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-green-400">
+                  ₹{Math.round(artist.totalRevenue * (artist.royaltyPercentage / 100)).toLocaleString()} royalties
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/20 bg-white/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Fans</p>
+                <p className="text-2xl font-bold text-white">{artist.fanCount.toLocaleString()}</p>
+                <p className="text-xs text-blue-400">Across all events</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/20 bg-white/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Tickets Sold</p>
+                <p className="text-2xl font-bold text-white">{artist.totalTicketsSold.toLocaleString()}</p>
+                <p className="text-xs text-purple-400">{artist.totalEvents} events</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <Ticket className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/20 bg-white/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Rating</p>
+                <p className="text-2xl font-bold text-white">{artist.averageRating.toFixed(1)}</p>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-3 w-3 ${
+                        star <= artist.averageRating ? 'text-yellow-400 fill-current' : 'text-gray-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                <Star className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6 bg-white/5 border border-white/20">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-white/20">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-white/20">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="messaging" className="data-[state=active]:bg-white/20">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Fan Messages
+          </TabsTrigger>
+          <TabsTrigger value="golden-tickets" className="data-[state=active]:bg-white/20">
+            <Crown className="h-4 w-4 mr-2" />
+            Golden Tickets
+          </TabsTrigger>
+          <TabsTrigger value="verification" className="data-[state=active]:bg-white/20">
+            <Award className="h-4 w-4 mr-2" />
+            Verification
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="data-[state=active]:bg-white/20">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Activity */}
+            <Card className="glass-card border-white/20 bg-white/5">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center py-8">
+                  <Music className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-400">No recent activity</p>
+                  <p className="text-sm text-gray-500">Create an event to get started</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Fan Engagement */}
+            <Card className="glass-card border-white/20 bg-white/5">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Fan Engagement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-400">No fan data yet</p>
+                  <p className="text-sm text-gray-500">Sell tickets to build your fanbase</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <ArtistAnalytics artistId={artist.id} />
+        </TabsContent>
+
+        <TabsContent value="messaging">
+          <ArtistMessaging 
+            artistId={artist.id} 
+            messagingEnabled={artist.messagingEnabled}
+            verificationStatus={artist.verificationStatus}
+          />
+        </TabsContent>
+
+        <TabsContent value="golden-tickets">
+          <GoldenTicketCreator 
+            artistId={artist.id}
+            canCreateGoldenTickets={artist.canCreateGoldenTickets}
+            verificationStatus={artist.verificationStatus}
+            goldenTicketPerks={artist.goldenTicketPerks}
+          />
+        </TabsContent>
+
+        <TabsContent value="verification">
+          <ArtistVerification 
+            artistId={artist.id}
+            verificationStatus={artist.verificationStatus}
+            onVerificationUpdate={fetchArtistProfile}
+          />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <ArtistProfileSetup 
+            existingProfile={artist}
+            onProfileCreated={fetchArtistProfile}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
-  )
+  );
 }

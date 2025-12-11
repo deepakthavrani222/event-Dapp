@@ -27,12 +27,29 @@ export async function GET(request: NextRequest) {
     const totalUsers = await User.countDocuments();
     const totalEvents = await Event.countDocuments();
     const totalTickets = await Ticket.countDocuments();
-    const pendingEvents = await Event.countDocuments({ status: 'DRAFT' });
+    const pendingEvents = await Event.countDocuments({ status: 'PENDING' });
+    const activeEvents = await Event.countDocuments({ status: 'PUBLISHED' });
+
+    // Get organizers and venues count
+    const totalOrganizers = await User.countDocuments({ role: 'ORGANIZER' });
+    const totalVenues = await Event.distinct('venue.name').then(v => v.length);
 
     // Get revenue
     const transactions = await Transaction.find({ status: 'COMPLETED' });
     const totalRevenue = transactions.reduce((sum, t) => sum + t.totalAmount, 0);
     const platformRevenue = transactions.reduce((sum, t) => sum + (t.platformFee || 0), 0);
+
+    // Get today's revenue
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTransactions = await Transaction.find({ 
+      status: 'COMPLETED',
+      createdAt: { $gte: today }
+    });
+    const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.platformFee || 0), 0);
+
+    // Calculate weekly growth (mock for now)
+    const weeklyGrowth = 12.5;
 
     // Get user breakdown by role
     const usersByRole = await User.aggregate([
@@ -56,9 +73,14 @@ export async function GET(request: NextRequest) {
         totalUsers,
         totalEvents,
         totalTickets,
-        pendingEvents,
+        pendingApprovals: pendingEvents,
+        activeEvents,
+        totalOrganizers,
+        totalVenues,
         totalRevenue,
         platformRevenue,
+        todayRevenue,
+        weeklyGrowth,
       },
       usersByRole: usersByRole.reduce((acc, item) => {
         acc[item._id] = item.count;

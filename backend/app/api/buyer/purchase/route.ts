@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         eventId: ticketType.eventId,
         ticketTypeId: ticketType._id,
         buyerId: auth.user!.id,
-        tokenId: ticketType.tokenId,
+        tokenId: `${ticketType.tokenId}-${Date.now()}-${i}`, // Make unique per ticket
         price: ticketType.price,
         currency: ticketType.currency,
         status: 'ACTIVE',

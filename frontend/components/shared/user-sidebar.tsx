@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, User, Ticket, Settings, LogOut, Wallet, History, Heart, Star, HelpCircle } from "lucide-react"
+import { X, User, Ticket, Settings, LogOut, Wallet, History, Heart, Star, HelpCircle, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -80,6 +80,9 @@ export function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
     ],
     admin: [
       { icon: Star, label: "Admin Dashboard", href: "/admin", description: "Platform management" }
+    ],
+    artist: [
+      { icon: Crown, label: "Artist Tools", href: "/artist-tools", description: "Golden tickets & fan engagement" }
     ]
   }
 

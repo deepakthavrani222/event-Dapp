@@ -31,6 +31,8 @@ import {
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import { useAuth } from '@/lib/context/AuthContext';
 import { apiClient } from '@/lib/api/client';
+import { useRealTimeTickets, triggerTicketRefresh } from '@/lib/hooks/useRealTimeTickets';
+import { checkRecentPurchase } from '@/lib/api/purchaseWithRefresh';
 import { TicketEntryScreen } from './TicketEntryScreen';
 import { GiftTransferDialog } from './GiftTransferDialog';
 import { ResellDialog } from './ResellDialog';
@@ -75,83 +77,209 @@ export function MyTicketsHub() {
   const [showGiftDialog, setShowGiftDialog] = useState(false);
   const [showResellDialog, setShowResellDialog] = useState(false);
 
+  // Use real-time tickets hook for instant updates
+  const { 
+    tickets: realTimeTickets, 
+    loading: realTimeLoading, 
+    refreshTickets: forceRefresh,
+    ticketCount 
+  } = useRealTimeTickets();
+
   useEffect(() => {
-    fetchUserTickets();
+    // Check for recent purchases on mount
+    checkRecentPurchase();
+    
     fetchResaleListings();
     fetchWalletBalance();
+  }, [user]); // Refresh when user changes
+
+  // Sync real-time tickets with local state
+  useEffect(() => {
+    if (realTimeTickets && realTimeTickets.length >= 0) {
+      // Transform real-time tickets to component format
+      const transformedTickets: TicketData[] = realTimeTickets.map((ticket: any) => {
+        const eventDate = new Date(ticket.event?.startDate || Date.now());
+        const now = new Date();
+        
+        return {
+          id: ticket.id,
+          eventId: ticket.event?.id || '',
+          eventTitle: ticket.event?.title || 'Unknown Event',
+          eventImage: '/concert-stage-purple-lights.jpg',
+          venue: ticket.event?.venue || 'TBA',
+          city: 'Mumbai',
+          date: ticket.event?.startDate || new Date().toISOString(),
+          seatNumber: `${ticket.ticketType?.name || 'GA'}-${ticket.tokenId}`,
+          ticketType: ticket.ticketType?.name || 'General Admission',
+          price: ticket.price || 0,
+          qrCode: `QR_${ticket.tokenId}_${ticket.id}`,
+          status: ticket.status === 'USED' ? 'past' : 
+                 (eventDate < now ? 'past' : 'upcoming') as 'upcoming' | 'past' | 'used',
+          transferable: ticket.status === 'ACTIVE',
+          resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1)
+        };
+      });
+      
+      setTickets(transformedTickets);
+      setLoading(realTimeLoading);
+      // Real-time sync completed
+    }
+  }, [realTimeTickets, realTimeLoading]);
+
+  // Refresh when page becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refreshing tickets
+        refreshTickets();
+      }
+    };
+
+    const handleFocus = () => {
+      // Window focused, refreshing tickets
+      refreshTickets();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
+
+  // Also refresh every 3 seconds when page is active (very frequent for immediate updates)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        // Auto-refresh interval
+        refreshTickets();
+      }
+    }, 3000); // Very frequent refresh for immediate updates
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Listen for storage events (when other tabs make purchases)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Storage change detected, refreshing
+      refreshTickets();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Listen for page navigation events
+  useEffect(() => {
+    const handlePopState = () => {
+      // Navigation detected, refreshing
+      refreshTickets();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Listen for keyboard shortcuts (F5 or Ctrl+R)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F5' || (event.ctrlKey && event.key === 'r')) {
+        // Refresh key detected, refreshing tickets
+        refreshTickets();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Add a refresh function that can be called manually
+  const refreshTickets = () => {
+    // Manual refresh triggered
+    setLoading(true); // Show loading state during refresh
+    forceRefresh(); // Use real-time refresh
+    fetchResaleListings();
+    fetchWalletBalance();
+  };
 
   const fetchUserTickets = async () => {
     try {
-      // Mock data - replace with actual API call
-      const mockTickets: TicketData[] = [
-        {
-          id: '1',
-          eventId: 'coldplay-mumbai',
-          eventTitle: 'Coldplay: Music of the Spheres World Tour',
-          eventImage: '/concert-stage-purple-lights.jpg',
-          venue: 'DY Patil Stadium',
-          city: 'Mumbai',
-          date: '2024-02-15T19:30:00Z',
-          seatNumber: 'VIP-A-101',
-          ticketType: 'VIP',
-          price: 8500,
-          qrCode: 'QR_CODE_DATA_1',
-          status: 'upcoming',
-          transferable: true,
-          resellable: true
-        },
-        {
-          id: '2',
-          eventId: 'diljit-delhi',
-          eventTitle: 'Diljit Dosanjh Live in Concert',
-          eventImage: '/concert-crowd-lights.jpg',
-          venue: 'Jawaharlal Nehru Stadium',
-          city: 'Delhi',
-          date: '2024-01-20T20:00:00Z',
-          seatNumber: 'GA-205',
-          ticketType: 'General Admission',
-          price: 2500,
-          qrCode: 'QR_CODE_DATA_2',
-          status: 'past',
-          transferable: false,
-          resellable: false
-        }
-      ];
-      setTickets(mockTickets);
+      // Fetching user tickets
+      
+      // Force clear any cached responses
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      
+      const response = await apiClient.getMyTickets();
+      
+      if (response.success && response.tickets) {
+        // Found tickets, transforming data
+        
+        // Transform API response to match component interface
+        const transformedTickets: TicketData[] = response.tickets.map((ticket: any) => {
+          const eventDate = new Date(ticket.event?.startDate || Date.now());
+          const now = new Date();
+          
+          return {
+            id: ticket.id,
+            eventId: ticket.event?.id || '',
+            eventTitle: ticket.event?.title || 'Unknown Event',
+            eventImage: '/concert-stage-purple-lights.jpg', // Default image - could be from event data
+            venue: ticket.event?.venue || 'TBA',
+            city: 'Mumbai', // Default - could be extracted from venue
+            date: ticket.event?.startDate || new Date().toISOString(),
+            seatNumber: `${ticket.ticketType?.name || 'GA'}-${ticket.tokenId}`,
+            ticketType: ticket.ticketType?.name || 'General Admission',
+            price: ticket.price || 0,
+            qrCode: `QR_${ticket.tokenId}_${ticket.id}`,
+            status: ticket.status === 'USED' ? 'past' : 
+                   (eventDate < now ? 'past' : 'upcoming') as 'upcoming' | 'past' | 'used',
+            transferable: ticket.status === 'ACTIVE',
+            resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1) // Can resell if event is more than 1 day away
+          };
+        });
+        
+        // Tickets transformed successfully
+        setTickets(transformedTickets);
+      } else {
+        // No tickets found - set empty array
+        setTickets([]);
+      }
     } catch (error) {
       console.error('Failed to fetch tickets:', error);
+      // On error, show empty state instead of mock data
+      setTickets([]);
     }
   };
 
   const fetchResaleListings = async () => {
     try {
-      // Mock data - replace with actual API call
-      const mockListings: ResaleListingData[] = [
-        {
-          id: '1',
-          ticketId: '3',
-          eventTitle: 'AR Rahman Live',
-          eventImage: '/concert-stage-purple-lights.jpg',
-          originalPrice: 3500,
-          listingPrice: 4200,
-          status: 'active',
-          views: 24,
-          listedDate: '2024-01-10T10:00:00Z'
-        }
-      ];
-      setResaleListings(mockListings);
+      // TODO: Implement actual API call when resale listings endpoint is ready
+      // const response = await apiClient.getMyResaleListings();
+      
+      // For now, set empty array - will be populated when resale system is implemented
+      setResaleListings([]);
     } catch (error) {
       console.error('Failed to fetch resale listings:', error);
+      setResaleListings([]);
     }
   };
 
   const fetchWalletBalance = async () => {
     try {
-      // Mock data - replace with actual API call
-      setWalletBalance(12500);
+      // TODO: Implement actual wallet balance API call
+      // const response = await apiClient.getWalletBalance();
+      
+      // For now, set to 0 - will be populated when wallet system is implemented
+      setWalletBalance(0);
     } catch (error) {
       console.error('Failed to fetch wallet balance:', error);
+      setWalletBalance(0);
     } finally {
       setLoading(false);
     }

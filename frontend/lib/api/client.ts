@@ -144,8 +144,12 @@ class ApiClient {
   }
 
   async getMyTickets() {
-    return this.request('/api/buyer/tickets', {
+    // Add multiple cache-busting parameters
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    return this.request(`/api/buyer/tickets?_t=${timestamp}&_r=${random}&_cb=${Date.now()}`, {
       method: 'GET',
+      cache: 'no-store', // Force no caching
     });
   }
 
@@ -225,6 +229,303 @@ class ApiClient {
   async deleteImage(publicId: string) {
     return this.request(`/api/upload/image?publicId=${publicId}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Artist endpoints
+  async getArtistProfile() {
+    return this.request('/api/artist/profile', {
+      method: 'GET',
+    });
+  }
+
+  async saveArtistProfile(profileData: any) {
+    return this.request('/api/artist/profile', {
+      method: 'POST',
+      body: JSON.stringify(profileData),
+    });
+  }
+
+  async submitArtistVerification(documents: any) {
+    return this.request('/api/artist/verification', {
+      method: 'POST',
+      body: JSON.stringify(documents),
+    });
+  }
+
+  async getArtistVerificationStatus() {
+    return this.request('/api/artist/verification', {
+      method: 'GET',
+    });
+  }
+
+  async getArtistAnalytics(timeRange: string = '30d') {
+    return this.request(`/api/artist/analytics?timeRange=${timeRange}`, {
+      method: 'GET',
+    });
+  }
+
+  async getArtistMessages(page: number = 1, status?: string) {
+    const query = new URLSearchParams({ page: page.toString() });
+    if (status) query.append('status', status);
+    
+    return this.request(`/api/artist/messages?${query}`, {
+      method: 'GET',
+    });
+  }
+
+  async sendArtistMessage(messageData: any) {
+    return this.request('/api/artist/messages', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  }
+
+  // Admin Artist endpoints
+  async getAdminArtists(status: string = 'pending', page: number = 1) {
+    return this.request(`/api/admin/artists?status=${status}&page=${page}`, {
+      method: 'GET',
+    });
+  }
+
+  async verifyArtist(artistId: string, action: 'approve' | 'reject', data: any) {
+    return this.request(`/api/admin/artists/${artistId}/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...data }),
+    });
+  }
+
+  // Public Artist Profile (no auth required)
+  async getArtistProfile(slug: string) {
+    return this.request(`/api/artist/${slug}`, {
+      method: 'GET',
+      headers: {}, // No auth required for public profiles
+    });
+  }
+
+  // Get all verified artists (public endpoint)
+  async getVerifiedArtists() {
+    return this.request('/api/artists', {
+      method: 'GET',
+      headers: {}, // No auth required for public artist list
+    });
+  }
+
+  // Follow/Unfollow artist
+  async followArtist(slug: string, action: 'follow' | 'unfollow') {
+    return this.request(`/api/artist/${slug}/follow`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
+  }
+
+  // Check if following artist
+  async checkArtistFollowStatus(slug: string) {
+    return this.request(`/api/artist/${slug}/follow`, {
+      method: 'GET',
+    });
+  }
+
+  // Subscribe to artist updates
+  async subscribeToArtist(slug: string, email: string) {
+    return this.request(`/api/artist/${slug}/subscribe`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // Golden Ticket endpoints
+  async getGoldenTicketTemplates() {
+    return this.request('/api/artist/golden-tickets', {
+      method: 'GET',
+    });
+  }
+
+  async createGoldenTicketTemplate(templateData: any) {
+    return this.request('/api/artist/golden-tickets', {
+      method: 'POST',
+      body: JSON.stringify(templateData),
+    });
+  }
+
+  async getGoldenTicketTemplate(id: string) {
+    return this.request(`/api/artist/golden-tickets/${id}`, {
+      method: 'GET',
+      headers: {}, // Public endpoint
+    });
+  }
+
+  async updateGoldenTicketTemplate(id: string, updateData: any) {
+    return this.request(`/api/artist/golden-tickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  async deleteGoldenTicketTemplate(id: string) {
+    return this.request(`/api/artist/golden-tickets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async purchaseGoldenTicket(templateId: string, purchaseData: any) {
+    return this.request(`/api/buyer/golden-tickets/${templateId}/purchase`, {
+      method: 'POST',
+      body: JSON.stringify(purchaseData),
+    });
+  }
+
+  // Artist Messaging endpoints
+  async getArtistMessages(page: number = 1, status?: string) {
+    const params = new URLSearchParams({ page: page.toString() });
+    if (status) params.append('status', status);
+    
+    return this.request(`/api/artist/messages?${params}`, {
+      method: 'GET',
+    });
+  }
+
+  async sendArtistMessage(messageData: any) {
+    return this.request('/api/artist/messages', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  }
+
+  async getArtistAudience() {
+    return this.request('/api/artist/audience', {
+      method: 'GET',
+    });
+  }
+
+  // Admin Settings endpoints
+  async getAdminSettings(category?: string) {
+    const params = category ? `?category=${category}` : '';
+    return this.request(`/api/admin/settings${params}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminSetting(settingData: any) {
+    return this.request('/api/admin/settings', {
+      method: 'POST',
+      body: JSON.stringify(settingData),
+    });
+  }
+
+  async getAdminUsers(role?: string) {
+    const params = role ? `?role=${role}` : '';
+    return this.request(`/api/admin/users${params}`, {
+      method: 'GET',
+    });
+  }
+
+  async addAdminUser(userData: any) {
+    return this.request('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async getAuditLogs(filters: any = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value as string);
+    });
+    
+    return this.request(`/api/admin/audit?${params}`, {
+      method: 'GET',
+    });
+  }
+
+  async getDataExports() {
+    return this.request('/api/admin/export', {
+      method: 'GET',
+    });
+  }
+
+  async requestDataExport(exportData: any) {
+    return this.request('/api/admin/export', {
+      method: 'POST',
+      body: JSON.stringify(exportData),
+    });
+  }
+
+  // Artist Perks endpoints
+  async getArtistPerks() {
+    return this.request('/api/artist/perks', {
+      method: 'GET',
+    });
+  }
+
+  async recalculateArtistTier() {
+    return this.request('/api/artist/perks', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'recalculate' }),
+    });
+  }
+
+  // Collaboration endpoints
+  async getCollaborations(status?: string) {
+    const params = status ? `?status=${status}` : '';
+    return this.request(`/api/artist/collaborations${params}`, {
+      method: 'GET',
+    });
+  }
+
+  async createCollaboration(collabData: any) {
+    return this.request('/api/artist/collaborations', {
+      method: 'POST',
+      body: JSON.stringify(collabData),
+    });
+  }
+
+  async getCollaboration(id: string) {
+    return this.request(`/api/artist/collaborations/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async respondToCollaboration(id: string, action: string, data: any = {}) {
+    return this.request(`/api/artist/collaborations/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, ...data }),
+    });
+  }
+
+  // NFT Collectibles endpoints
+  async getNFTCollectibles() {
+    return this.request('/api/artist/nft-collectibles', {
+      method: 'GET',
+    });
+  }
+
+  async createNFTCollectible(collectibleData: any) {
+    return this.request('/api/artist/nft-collectibles', {
+      method: 'POST',
+      body: JSON.stringify(collectibleData),
+    });
+  }
+
+  // Featured Artists endpoints (public)
+  async getFeaturedArtists() {
+    return this.request('/api/admin/featured-artists', {
+      method: 'GET',
+      headers: {}, // Public endpoint
+    });
+  }
+
+  async manageFeaturedArtists(action: string, data: any) {
+    return this.request('/api/admin/featured-artists', {
+      method: 'POST',
+      body: JSON.stringify({ action, ...data }),
+    });
+  }
+
+  async trackFeaturedArtistClick(artistId: string) {
+    return this.request(`/api/admin/featured-artists/${artistId}/click`, {
+      method: 'POST',
+      headers: {}, // Public endpoint
     });
   }
 }
