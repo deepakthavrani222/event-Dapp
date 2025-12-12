@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (!ticketId || !price || price <= 0) {
       return NextResponse.json(
-        { error: 'Invalid ticket ID or price' },
+        { success: false, error: 'Invalid ticket ID or price' },
         { status: 400 }
       );
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (!ticket) {
       return NextResponse.json(
-        { error: 'Ticket not found' },
+        { success: false, error: 'Ticket not found' },
         { status: 404 }
       );
     }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Verify ownership
     if (ticket.buyerId.toString() !== auth.user!.id) {
       return NextResponse.json(
-        { error: 'You do not own this ticket' },
+        { success: false, error: 'You do not own this ticket' },
         { status: 403 }
       );
     }
@@ -48,20 +48,20 @@ export async function POST(request: NextRequest) {
     // Check if ticket is active
     if (ticket.status !== 'ACTIVE') {
       return NextResponse.json(
-        { error: 'Ticket is not available for resale' },
+        { success: false, error: `Ticket is not available for resale (status: ${ticket.status})` },
         { status: 400 }
       );
     }
 
-    // Check if already listed
-    const existingListing = await Listing.findOne({
+    // Check if already listed (active)
+    const existingActiveListing = await Listing.findOne({
       ticketId: ticket._id,
-      status: 'ACTIVE',
+      status: 'active',
     });
 
-    if (existingListing) {
+    if (existingActiveListing) {
       return NextResponse.json(
-        { error: 'Ticket is already listed for resale' },
+        { success: false, error: 'Ticket is already listed for resale' },
         { status: 400 }
       );
     }
@@ -69,17 +69,35 @@ export async function POST(request: NextRequest) {
     // Get ticket type for royalty calculation
     const ticketType = await TicketType.findById(ticket.ticketTypeId);
 
-    // Create listing
-    const listing = await Listing.create({
-      ticketId: ticket._id,
-      sellerId: auth.user!.id,
-      eventId: ticket.eventId,
-      ticketTypeId: ticket.ticketTypeId,
-      price,
-      currency: ticket.currency,
-      status: 'ACTIVE',
-      listedAt: new Date(),
-    });
+    const mongoose = await import('mongoose');
+    
+    // Check if there's a cancelled/sold listing for this ticket (reactivate it)
+    const existingListing = await Listing.findOne({ ticketId: ticket._id });
+    
+    let listing;
+    if (existingListing) {
+      // Reactivate the existing listing with new price
+      existingListing.price = price;
+      existingListing.status = 'active';
+      existingListing.listedAt = new Date();
+      existingListing.sellerId = new mongoose.Types.ObjectId(auth.user!.id);
+      existingListing.eventId = ticket.eventId;
+      existingListing.ticketTypeId = ticket.ticketTypeId;
+      await existingListing.save();
+      listing = existingListing;
+    } else {
+      // Create new listing
+      listing = await Listing.create({
+        ticketId: ticket._id,
+        sellerId: new mongoose.Types.ObjectId(auth.user!.id),
+        eventId: ticket.eventId,
+        ticketTypeId: ticket.ticketTypeId,
+        price,
+        currency: ticket.currency || 'INR',
+        status: 'active',
+        listedAt: new Date(),
+      });
+    }
 
     // Update ticket status
     ticket.status = 'LISTED';
@@ -98,8 +116,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('List ticket error:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
-      { error: 'Failed to list ticket', details: error.message },
+      { 
+        success: false,
+        error: error.message || 'Failed to list ticket', 
+        details: error.stack 
+      },
       { status: 500 }
     );
   }

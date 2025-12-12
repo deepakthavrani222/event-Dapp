@@ -8,7 +8,6 @@ import {
   QrCode, 
   ArrowLeft, 
   Maximize2,
-  Sun,
   Volume2,
   CheckCircle,
   MapPin,
@@ -249,13 +248,6 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
           >
             <Maximize2 className="h-5 w-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10"
-          >
-            <Sun className="h-5 w-5" />
-          </Button>
         </div>
       </div>
 
@@ -295,9 +287,9 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
           transition={{ type: "spring", stiffness: 200 }}
           className="relative"
         >
-          {/* QR Container */}
-          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl">
-            <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center bg-white" ref={qrRef}>
+          {/* QR Container - Compact */}
+          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-2xl">
+            <div className="w-48 h-48 md:w-56 md:h-56 flex items-center justify-center bg-white" ref={qrRef}>
               {/* Real QR Code */}
               <QRCodeReact
                 value={JSON.stringify({
@@ -311,9 +303,9 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
                   ticketType: ticket.ticketType,
                   signature: `TIKR_${ticket.id}_${ticket.tokenId}`
                 })}
-                size={256}
+                size={200}
                 style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                viewBox="0 0 256 256"
+                viewBox="0 0 200 200"
                 fgColor="#000000"
                 bgColor="#ffffff"
                 level="H"
@@ -326,13 +318,13 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
           <motion.div
             animate={{ 
               boxShadow: [
-                '0 0 20px rgba(139, 92, 246, 0.5)',
-                '0 0 40px rgba(6, 182, 212, 0.5)',
-                '0 0 20px rgba(139, 92, 246, 0.5)'
+                '0 0 15px rgba(139, 92, 246, 0.5)',
+                '0 0 30px rgba(6, 182, 212, 0.5)',
+                '0 0 15px rgba(139, 92, 246, 0.5)'
               ]
             }}
             transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute inset-0 rounded-3xl pointer-events-none"
+            className="absolute inset-0 rounded-2xl pointer-events-none"
           />
 
           {/* Verified badge */}

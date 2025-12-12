@@ -135,6 +135,12 @@ class ApiClient {
     });
   }
 
+  async getOrganizerStats() {
+    return this.request('/api/organizer/stats', {
+      method: 'GET',
+    });
+  }
+
   // Buyer endpoints
   async purchaseTickets(purchaseData: any) {
     return this.request('/api/buyer/purchase', {
@@ -164,6 +170,31 @@ class ApiClient {
   async getResaleListings() {
     return this.request('/api/buyer/listings', {
       method: 'GET',
+    });
+  }
+
+  async getMyResaleListings() {
+    return this.request('/api/buyer/my-listings', {
+      method: 'GET',
+    });
+  }
+
+  async cancelListing(listingId: string) {
+    return this.request(`/api/buyer/listings/${listingId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async getListing(listingId: string) {
+    return this.request(`/api/buyer/listings/${listingId}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateListingPrice(listingId: string, price: number) {
+    return this.request(`/api/buyer/listings/${listingId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ price }),
     });
   }
 

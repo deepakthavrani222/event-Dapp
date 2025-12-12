@@ -49,16 +49,24 @@ export function ResellDialog({ ticket, onClose, onSuccess }: ResellDialogProps) 
   const handleListTicket = async () => {
     setLoading(true);
     try {
-      // Simulate listing process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setStep('success');
+      // Use apiClient for proper authentication
+      const { apiClient } = await import('@/lib/api/client');
+      const data = await apiClient.resellTicket(ticket.id, listingPrice);
       
-      // Auto-close after success
-      setTimeout(() => {
-        onSuccess();
-      }, 3000);
-    } catch (error) {
+      if (data.success) {
+        setStep('success');
+        
+        // Auto-close after success
+        setTimeout(() => {
+          onSuccess();
+        }, 3000);
+      } else {
+        console.error('Listing failed:', data.error);
+        alert(data.error || 'Failed to list ticket');
+      }
+    } catch (error: any) {
       console.error('Listing failed:', error);
+      alert(error.message || 'Failed to list ticket. Please try again.');
     } finally {
       setLoading(false);
     }

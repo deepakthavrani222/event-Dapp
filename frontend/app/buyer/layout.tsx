@@ -35,6 +35,8 @@ export default function BuyerLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <PublicHeader />
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
       <main className="flex-1">{children}</main>
     </div>
   )

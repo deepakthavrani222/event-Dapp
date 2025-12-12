@@ -36,6 +36,7 @@ import { checkRecentPurchase } from '@/lib/api/purchaseWithRefresh';
 import { TicketEntryScreen } from './TicketEntryScreen';
 import { GiftTransferDialog } from './GiftTransferDialog';
 import { ResellDialog } from './ResellDialog';
+import { toast } from '@/hooks/use-toast';
 
 interface TicketData {
   id: string;
@@ -76,6 +77,10 @@ export function MyTicketsHub() {
   const [showEntryScreen, setShowEntryScreen] = useState(false);
   const [showGiftDialog, setShowGiftDialog] = useState(false);
   const [showResellDialog, setShowResellDialog] = useState(false);
+  const [editingListing, setEditingListing] = useState<ResaleListingData | null>(null);
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [viewingListing, setViewingListing] = useState<ResaleListingData | null>(null);
+  const [confirmRemoveListing, setConfirmRemoveListing] = useState<string | null>(null);
 
   // Use real-time tickets hook for instant updates
   const { 
@@ -105,9 +110,9 @@ export function MyTicketsHub() {
           id: ticket.id,
           eventId: ticket.event?.id || '',
           eventTitle: ticket.event?.title || 'Unknown Event',
-          eventImage: '/concert-stage-purple-lights.jpg',
+          eventImage: ticket.event?.image || '/concert-stage-purple-lights.jpg',
           venue: ticket.event?.venue || 'TBA',
-          city: 'Mumbai',
+          city: ticket.event?.city || 'Mumbai',
           date: ticket.event?.startDate || new Date().toISOString(),
           seatNumber: `${ticket.ticketType?.name || 'GA'}-${ticket.tokenId}`,
           ticketType: ticket.ticketType?.name || 'General Admission',
@@ -149,17 +154,11 @@ export function MyTicketsHub() {
     };
   }, []);
 
-  // Also refresh every 3 seconds when page is active (very frequent for immediate updates)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        // Auto-refresh interval
-        refreshTickets();
-      }
-    }, 3000); // Very frequent refresh for immediate updates
-
-    return () => clearInterval(interval);
-  }, []);
+  // Removed aggressive 3-second polling - tickets will refresh on:
+  // 1. Page visibility change
+  // 2. Window focus
+  // 3. Storage events (cross-tab purchases)
+  // 4. Custom ticketPurchased events
 
   // Listen for storage events (when other tabs make purchases)
   useEffect(() => {
@@ -229,9 +228,9 @@ export function MyTicketsHub() {
             id: ticket.id,
             eventId: ticket.event?.id || '',
             eventTitle: ticket.event?.title || 'Unknown Event',
-            eventImage: '/concert-stage-purple-lights.jpg', // Default image - could be from event data
+            eventImage: ticket.event?.image || '/concert-stage-purple-lights.jpg',
             venue: ticket.event?.venue || 'TBA',
-            city: 'Mumbai', // Default - could be extracted from venue
+            city: ticket.event?.city || 'Mumbai',
             date: ticket.event?.startDate || new Date().toISOString(),
             seatNumber: `${ticket.ticketType?.name || 'GA'}-${ticket.tokenId}`,
             ticketType: ticket.ticketType?.name || 'General Admission',
@@ -240,7 +239,7 @@ export function MyTicketsHub() {
             status: ticket.status === 'USED' ? 'past' : 
                    (eventDate < now ? 'past' : 'upcoming') as 'upcoming' | 'past' | 'used',
             transferable: ticket.status === 'ACTIVE',
-            resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1) // Can resell if event is more than 1 day away
+            resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1)
           };
         });
         
@@ -259,11 +258,25 @@ export function MyTicketsHub() {
 
   const fetchResaleListings = async () => {
     try {
-      // TODO: Implement actual API call when resale listings endpoint is ready
-      // const response = await apiClient.getMyResaleListings();
+      const response = await apiClient.getMyResaleListings();
       
-      // For now, set empty array - will be populated when resale system is implemented
-      setResaleListings([]);
+      if (response.success && response.listings) {
+        const transformedListings: ResaleListingData[] = response.listings.map((listing: any) => ({
+          id: listing.id,
+          ticketId: listing.ticketId,
+          eventTitle: listing.event?.title || 'Unknown Event',
+          eventImage: listing.event?.image || '/concert-stage-purple-lights.jpg',
+          originalPrice: listing.originalPrice || 0,
+          listingPrice: listing.price || 0,
+          status: listing.status?.toLowerCase() === 'active' ? 'active' : 
+                  listing.status?.toLowerCase() === 'sold' ? 'sold' : 'expired',
+          views: listing.views || 0,
+          listedDate: listing.listedAt || new Date().toISOString(),
+        }));
+        setResaleListings(transformedListings);
+      } else {
+        setResaleListings([]);
+      }
     } catch (error) {
       console.error('Failed to fetch resale listings:', error);
       setResaleListings([]);
@@ -433,6 +446,89 @@ export function MyTicketsHub() {
     </motion.div>
   );
 
+  const handleCancelListing = (listingId: string) => {
+    setConfirmRemoveListing(listingId);
+  };
+
+  const confirmCancelListing = async () => {
+    if (!confirmRemoveListing) return;
+    
+    try {
+      const response = await apiClient.cancelListing(confirmRemoveListing);
+      if (response.success) {
+        fetchResaleListings();
+        fetchUserTickets();
+        toast({
+          title: "Listing Removed",
+          description: "Your ticket has been returned to your collection.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || 'Failed to remove listing',
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Cancel listing error:', error);
+      toast({
+        title: "Error",
+        description: 'Failed to remove listing: ' + (error.message || 'Unknown error'),
+        variant: "destructive",
+      });
+    } finally {
+      setConfirmRemoveListing(null);
+    }
+  };
+
+  const handleEditListing = (listing: ResaleListingData) => {
+    setEditingListing(listing);
+    setEditPrice(listing.listingPrice.toString());
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!editingListing) return;
+    
+    const newPrice = parseFloat(editPrice);
+    if (isNaN(newPrice) || newPrice <= 0) {
+      toast({
+        title: "Invalid Price",
+        description: "Please enter a valid price greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await apiClient.updateListingPrice(editingListing.id, newPrice);
+      if (response.success) {
+        fetchResaleListings();
+        setEditingListing(null);
+        toast({
+          title: "Price Updated",
+          description: `Listing price updated to ₹${newPrice.toLocaleString()}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || 'Failed to update price',
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Update price error:', error);
+      toast({
+        title: "Error",
+        description: 'Failed to update price: ' + (error.message || 'Unknown error'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewListing = (listing: ResaleListingData) => {
+    setViewingListing(listing);
+  };
+
   const ResaleCard = ({ listing }: { listing: ResaleListingData }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -479,15 +575,30 @@ export function MyTicketsHub() {
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="flex-1 text-xs">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex-1 text-xs"
+              onClick={() => handleViewListing(listing)}
+            >
               <Eye className="h-3 w-3 mr-1" />
               View
             </Button>
-            <Button size="sm" variant="outline" className="flex-1 text-xs">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex-1 text-xs"
+              onClick={() => handleEditListing(listing)}
+            >
               <Edit className="h-3 w-3 mr-1" />
               Edit
             </Button>
-            <Button size="sm" variant="outline" className="flex-1 text-xs">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex-1 text-xs text-red-400 hover:text-red-300 hover:border-red-500/50"
+              onClick={() => handleCancelListing(listing.id)}
+            >
               <Trash2 className="h-3 w-3 mr-1" />
               Remove
             </Button>
@@ -728,6 +839,185 @@ export function MyTicketsHub() {
             fetchResaleListings();
           }}
         />
+      )}
+
+      {/* Edit Listing Dialog */}
+      {editingListing && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-md w-full"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Edit Listing Price</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <img 
+                  src={editingListing.eventImage} 
+                  alt={editingListing.eventTitle}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div>
+                  <p className="text-white font-medium">{editingListing.eventTitle}</p>
+                  <p className="text-gray-400 text-sm">Original: ₹{editingListing.originalPrice.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">New Price (₹)</label>
+                <input
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500"
+                  placeholder="Enter new price"
+                  min="1"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setEditingListing(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  onClick={handleUpdatePrice}
+                >
+                  Update Price
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* View Listing Dialog */}
+      {viewingListing && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-lg w-full"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">Listing Details</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingListing(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <img 
+                src={viewingListing.eventImage} 
+                alt={viewingListing.eventTitle}
+                className="w-full h-48 rounded-lg object-cover"
+              />
+
+              <div>
+                <h4 className="text-lg font-semibold text-white">{viewingListing.eventTitle}</h4>
+                <Badge className={
+                  viewingListing.status === 'active' 
+                    ? 'bg-green-500/20 text-green-300 border-green-500/30 mt-2'
+                    : viewingListing.status === 'sold'
+                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/30 mt-2'
+                    : 'bg-gray-500/20 text-gray-300 border-gray-500/30 mt-2'
+                }>
+                  {viewingListing.status}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-white/5 rounded-lg p-3">
+                  <p className="text-gray-400">Original Price</p>
+                  <p className="text-white font-semibold">₹{viewingListing.originalPrice.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3">
+                  <p className="text-gray-400">Listed Price</p>
+                  <p className="text-green-400 font-semibold">₹{viewingListing.listingPrice.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3">
+                  <p className="text-gray-400">Views</p>
+                  <p className="text-white font-semibold">{viewingListing.views}</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3">
+                  <p className="text-gray-400">Listed On</p>
+                  <p className="text-white font-semibold">{format(new Date(viewingListing.listedDate), 'MMM dd, yyyy')}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setViewingListing(null);
+                    handleEditListing(viewingListing);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Price
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-red-400 hover:text-red-300 hover:border-red-500/50"
+                  onClick={() => {
+                    setViewingListing(null);
+                    handleCancelListing(viewingListing.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Confirm Remove Dialog */}
+      {confirmRemoveListing && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-sm w-full"
+          >
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 className="h-6 w-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Remove Listing?</h3>
+              <p className="text-gray-400 text-sm">
+                Are you sure you want to remove this listing? The ticket will be returned to your collection.
+              </p>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setConfirmRemoveListing(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  onClick={confirmCancelListing}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

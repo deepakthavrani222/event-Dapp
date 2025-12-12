@@ -35,7 +35,7 @@ export async function POST(
       );
     }
 
-    event.status = 'PUBLISHED';
+    event.status = 'approved';
     await event.save();
 
     return NextResponse.json({

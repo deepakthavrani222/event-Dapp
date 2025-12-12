@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
 
     const query: any = {};
     if (status) {
-      query.status = status;
+      // Case-insensitive status filter
+      query.status = { $regex: new RegExp(`^${status}$`, 'i') };
     }
 
     const events = await Event.find(query)

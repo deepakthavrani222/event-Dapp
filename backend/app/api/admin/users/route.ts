@@ -4,7 +4,7 @@ import { AdminUser, logAuditEvent } from '@/lib/db/models/PlatformSettings';
 import { User } from '@/lib/db/models/User';
 import { verifyToken } from '@/lib/auth/jwt';
 
-// GET - Get admin users
+// GET - Get users (all platform users or admin users)
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -38,45 +38,73 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const isActive = searchParams.get('active');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const type = searchParams.get('type'); // 'admin' for admin users only
 
-    // Build query
+    // If type=admin, return admin users
+    if (type === 'admin') {
+      const query: any = {};
+      if (role) {
+        query.role = role;
+      }
+      if (isActive !== null) {
+        query.isActive = isActive === 'true';
+      }
+
+      const adminUsers = await AdminUser.find(query)
+        .populate('userId', 'name email walletAddress')
+        .populate('addedBy', 'name email')
+        .sort({ createdAt: -1 });
+
+      return NextResponse.json({
+        success: true,
+        adminUsers: adminUsers.map(admin => ({
+          id: admin._id,
+          user: admin.userId,
+          email: admin.email,
+          walletAddress: admin.walletAddress,
+          role: admin.role,
+          permissions: admin.permissions,
+          isActive: admin.isActive,
+          addedBy: admin.addedBy,
+          lastLoginAt: admin.lastLoginAt,
+          loginCount: admin.loginCount,
+          createdAt: admin.createdAt
+        })),
+        roles: ['super_admin', 'admin', 'moderator', 'support']
+      });
+    }
+
+    // Return all platform users
     const query: any = {};
-    if (role) {
+    if (role && role !== 'all') {
       query.role = role;
     }
-    if (isActive !== null) {
-      query.isActive = isActive === 'true';
-    }
 
-    // Get admin users
-    const adminUsers = await AdminUser.find(query)
-      .populate('userId', 'name email walletAddress')
-      .populate('addedBy', 'name email')
-      .sort({ createdAt: -1 });
+    const users = await User.find(query)
+      .select('name email role walletAddress isVerified createdAt')
+      .sort({ createdAt: -1 })
+      .limit(limit);
 
     return NextResponse.json({
       success: true,
-      adminUsers: adminUsers.map(admin => ({
-        id: admin._id,
-        user: admin.userId,
-        email: admin.email,
-        walletAddress: admin.walletAddress,
-        role: admin.role,
-        permissions: admin.permissions,
-        isActive: admin.isActive,
-        addedBy: admin.addedBy,
-        lastLoginAt: admin.lastLoginAt,
-        loginCount: admin.loginCount,
-        createdAt: admin.createdAt
+      users: users.map(u => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        walletAddress: u.walletAddress,
+        isVerified: u.isVerified || false,
+        createdAt: u.createdAt
       })),
-      roles: ['super_admin', 'admin', 'moderator', 'support']
+      total: await User.countDocuments(query)
     });
 
   } catch (error) {
-    console.error('Get admin users error:', error);
+    console.error('Get users error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Failed to fetch admin users' 
+      error: 'Failed to fetch users' 
     }, { status: 500 });
   }
 }

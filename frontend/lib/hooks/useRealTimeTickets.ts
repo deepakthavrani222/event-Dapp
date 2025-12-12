@@ -57,13 +57,13 @@ export function useRealTimeTickets() {
     };
   }, [fetchTickets]);
 
-  // Aggressive polling when page is active
+  // Light polling when page is active (every 30 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchTickets();
       }
-    }, 5000); // Every 5 seconds
+    }, 30000); // Every 30 seconds - reduced from 5 seconds
 
     return () => clearInterval(interval);
   }, [fetchTickets]);

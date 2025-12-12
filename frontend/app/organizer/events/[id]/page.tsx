@@ -333,22 +333,28 @@ export default function EventManagementPage() {
                   <CardDescription>Cumulative ticket sales</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={salesData}>
-                        <defs>
-                          <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area type="monotone" dataKey="sales" stroke="#8b5cf6" fill="url(#salesGradient)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer
+                    config={{
+                      sales: {
+                        label: "Sales",
+                        color: "#8b5cf6",
+                      },
+                    }}
+                    className="h-64 w-full"
+                  >
+                    <AreaChart data={salesData}>
+                      <defs>
+                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
+                      <YAxis stroke="#6b7280" fontSize={12} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area type="monotone" dataKey="sales" stroke="#8b5cf6" fill="url(#salesGradient)" strokeWidth={2} />
+                    </AreaChart>
+                  </ChartContainer>
                 </CardContent>
               </Card>
 
@@ -497,16 +503,22 @@ export default function EventManagementPage() {
                   <CardDescription>Tickets sold per day</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={salesData}>
-                        <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="daily" fill="#8b5cf6" radius={4} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer
+                    config={{
+                      daily: {
+                        label: "Daily Sales",
+                        color: "#8b5cf6",
+                      },
+                    }}
+                    className="h-64 w-full"
+                  >
+                    <BarChart data={salesData}>
+                      <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
+                      <YAxis stroke="#6b7280" fontSize={12} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="daily" fill="#8b5cf6" radius={4} />
+                    </BarChart>
+                  </ChartContainer>
                 </CardContent>
               </Card>
 
@@ -517,25 +529,31 @@ export default function EventManagementPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={event.ticketTypes?.map((tt: any, i: number) => ({
-                              name: tt.name,
-                              value: (tt.totalSupply - tt.availableSupply) * tt.price,
-                              fill: ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'][i % 4],
-                            }))}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            dataKey="value"
-                          />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <ChartContainer
+                      config={{
+                        value: {
+                          label: "Revenue",
+                          color: "#8b5cf6",
+                        },
+                      }}
+                      className="h-64"
+                    >
+                      <PieChart>
+                        <Pie
+                          data={event.ticketTypes?.map((tt: any, i: number) => ({
+                            name: tt.name,
+                            value: (tt.totalSupply - tt.availableSupply) * tt.price,
+                            fill: ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'][i % 4],
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          dataKey="value"
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ChartContainer>
                     <div className="space-y-3">
                       {event.ticketTypes?.map((tt: any, i: number) => {
                         const revenue = (tt.totalSupply - tt.availableSupply) * tt.price;

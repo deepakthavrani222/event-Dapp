@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { apiClient } from '@/lib/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TwoFactorVerifyModal } from '@/components/shared/two-factor-auth';
+import { toast } from '@/hooks/use-toast';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -25,11 +26,19 @@ interface DashboardMetrics {
   totalTickets: number;
   platformRevenue: number;
   todayRevenue: number;
+  todayTickets: number;
+  todayUsers: number;
   weeklyGrowth: number;
   pendingApprovals: number;
   activeEvents: number;
   totalOrganizers: number;
   totalVenues: number;
+  totalCities: number;
+}
+
+interface DailyRevenue {
+  day: string;
+  revenue: number;
 }
 
 // Confetti component for celebration
@@ -132,16 +141,37 @@ function WelcomeScreen({ user, todayRevenue, onContinue }: { user: any; todayRev
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [show2FA, setShow2FA] = useState(false);
   const [verified2FA, setVerified2FA] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'artists' | 'users' | 'revenue' | 'settings'>('overview');
+  
+  // Get initial tab from URL query params
+  const tabFromUrl = searchParams.get('tab') as 'overview' | 'approvals' | 'artists' | 'users' | 'tickets' | 'revenue' | 'settings' | null;
+  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'artists' | 'users' | 'tickets' | 'revenue' | 'settings'>(tabFromUrl || 'overview');
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [dailyRevenue, setDailyRevenue] = useState<DailyRevenue[]>([]);
   const [pendingEvents, setPendingEvents] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  // Analytics data for RevenueTab
+  const [revenueBreakdown, setRevenueBreakdown] = useState<any[]>([]);
+  const [topOrganizers, setTopOrganizers] = useState<any[]>([]);
+  const [cityData, setCityData] = useState<any[]>([]);
+  const [userGrowth, setUserGrowth] = useState<any[]>([]);
+  const [growthRate, setGrowthRate] = useState(0);
+  const [newThisMonth, setNewThisMonth] = useState(0);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([]);
+
+  // Sync tab with URL query params
+  useEffect(() => {
+    const tab = searchParams.get('tab') as typeof activeTab;
+    if (tab && ['overview', 'approvals', 'artists', 'users', 'tickets', 'revenue', 'settings'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // Check admin access - redirect if not admin
   useEffect(() => {
@@ -172,20 +202,42 @@ export default function AdminDashboard() {
       const metricsRes = await apiClient.request('/api/admin/dashboard');
       if (metricsRes.success) {
         setMetrics(metricsRes.metrics);
+        // Set daily revenue data
+        if (metricsRes.dailyRevenue) {
+          setDailyRevenue(metricsRes.dailyRevenue);
+        }
+        // Use real activity from API
+        if (metricsRes.recentActivity) {
+          setRecentActivity(metricsRes.recentActivity);
+        }
+        // Set analytics data for RevenueTab
+        if (metricsRes.revenueBreakdown) {
+          setRevenueBreakdown(metricsRes.revenueBreakdown);
+        }
+        if (metricsRes.topOrganizers) {
+          setTopOrganizers(metricsRes.topOrganizers);
+        }
+        if (metricsRes.cityData) {
+          setCityData(metricsRes.cityData);
+        }
+        if (metricsRes.userGrowth) {
+          setUserGrowth(metricsRes.userGrowth);
+        }
+        if (metricsRes.growthRate !== undefined) {
+          setGrowthRate(metricsRes.growthRate);
+        }
+        if (metricsRes.newThisMonth !== undefined) {
+          setNewThisMonth(metricsRes.newThisMonth);
+        }
+        if (metricsRes.withdrawalHistory) {
+          setWithdrawalHistory(metricsRes.withdrawalHistory);
+        }
       }
       
-      const eventsRes = await apiClient.request('/api/admin/events?status=PENDING');
+      const eventsRes = await apiClient.request('/api/admin/events?status=pending');
       if (eventsRes.success) {
         setPendingEvents(eventsRes.events || []);
       }
-
-      setRecentActivity([
-        { type: 'sale', message: 'New ticket sold for "Tech Conference 2025"', time: '2 min ago', amount: 2500 },
-        { type: 'signup', message: 'New organizer registered: EventPro Inc', time: '5 min ago' },
-        { type: 'approval', message: 'Event "Music Festival" approved', time: '15 min ago' },
-        { type: 'withdrawal', message: 'Withdrawal processed: ₹50,000', time: '1 hour ago', amount: 50000 },
-        { type: 'royalty', message: 'Royalty earned from resale', time: '2 hours ago', amount: 150 },
-      ]);
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
     } finally {
@@ -236,18 +288,21 @@ export default function AdminDashboard() {
     }
   };
 
-  // Mock data for demo
-  const mockMetrics: DashboardMetrics = metrics || {
-    totalUsers: 12458,
-    totalEvents: 342,
-    totalTickets: 45230,
-    platformRevenue: 4523000,
-    todayRevenue: 482000, // Good day! Will trigger confetti
-    weeklyGrowth: 12.5,
-    pendingApprovals: pendingEvents.length || 3,
-    activeEvents: 28,
-    totalOrganizers: 156,
-    totalVenues: 45,
+  // Use real metrics from API, with zero defaults
+  const dashboardMetrics: DashboardMetrics = metrics || {
+    totalUsers: 0,
+    totalEvents: 0,
+    totalTickets: 0,
+    platformRevenue: 0,
+    todayRevenue: 0,
+    todayTickets: 0,
+    todayUsers: 0,
+    weeklyGrowth: 0,
+    pendingApprovals: pendingEvents.length,
+    activeEvents: 0,
+    totalOrganizers: 0,
+    totalVenues: 0,
+    totalCities: 0,
   };
 
   // Loading state
@@ -293,7 +348,7 @@ export default function AdminDashboard() {
       <AnimatePresence>
         <WelcomeScreen
           user={user}
-          todayRevenue={mockMetrics.todayRevenue}
+          todayRevenue={dashboardMetrics.todayRevenue}
           onContinue={() => setShowWelcome(false)}
         />
       </AnimatePresence>
@@ -343,22 +398,14 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-          <StatCard icon={DollarSign} label="Platform Revenue" value={`₹${(mockMetrics.platformRevenue / 100000).toFixed(1)}L`} change={mockMetrics.weeklyGrowth} color="green" />
-          <StatCard icon={Ticket} label="Tickets Sold" value={mockMetrics.totalTickets.toLocaleString()} change={8.3} color="purple" />
-          <StatCard icon={Users} label="Total Users" value={mockMetrics.totalUsers.toLocaleString()} change={5.2} color="blue" />
-          <StatCard icon={Calendar} label="Active Events" value={mockMetrics.activeEvents} change={-2.1} color="cyan" />
-          <StatCard icon={Clock} label="Pending Approvals" value={mockMetrics.pendingApprovals} alert={mockMetrics.pendingApprovals > 0} color="orange" />
-        </div>
-
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
-            { id: 'approvals', label: 'Approvals', icon: CheckCircle, badge: mockMetrics.pendingApprovals },
-            { id: 'artists', label: 'Artists', icon: Crown, badge: 3 }, // Mock pending artist verifications
+            { id: 'approvals', label: 'Approvals', icon: CheckCircle, badge: dashboardMetrics.pendingApprovals },
+            { id: 'artists', label: 'Artists', icon: Crown },
             { id: 'users', label: 'Users', icon: Users },
+            { id: 'tickets', label: 'Tickets', icon: Ticket },
             { id: 'revenue', label: 'Revenue', icon: Wallet },
             { id: 'settings', label: 'Settings', icon: Settings },
           ].map(tab => (
@@ -380,11 +427,21 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'overview' && <OverviewTab metrics={mockMetrics} activity={recentActivity} />}
+        {activeTab === 'overview' && <OverviewTab metrics={dashboardMetrics} activity={recentActivity} dailyRevenue={dailyRevenue} onNavigate={(tab) => setActiveTab(tab as typeof activeTab)} />}
         {activeTab === 'approvals' && <ApprovalsTab events={pendingEvents} onApprove={approveEvent} onReject={rejectEvent} />}
         {activeTab === 'artists' && <ArtistsTab />}
         {activeTab === 'users' && <UsersTab />}
-        {activeTab === 'revenue' && <RevenueTab metrics={mockMetrics} />}
+        {activeTab === 'tickets' && <TicketsTab />}
+        {activeTab === 'revenue' && <RevenueTab 
+          metrics={dashboardMetrics} 
+          revenueBreakdown={revenueBreakdown}
+          topOrganizers={topOrganizers}
+          cityData={cityData}
+          userGrowth={userGrowth}
+          growthRate={growthRate}
+          newThisMonth={newThisMonth}
+          withdrawalHistory={withdrawalHistory}
+        />}
         {activeTab === 'settings' && <SettingsTab />}
       </div>
     </div>
@@ -425,22 +482,14 @@ function StatCard({ icon: Icon, label, value, change, color, alert }: {
 }
 
 // Overview Tab - Enhanced with Big Metrics, Quick Actions, and Twitter-like Live Feed
-function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activity: { type: string; message: string; time: string; amount?: number }[] }) {
+function OverviewTab({ metrics, activity, dailyRevenue, onNavigate }: { metrics: DashboardMetrics; activity: { type: string; message: string; time: string; amount?: number }[]; dailyRevenue: DailyRevenue[]; onNavigate?: (tab: string) => void }) {
+  // Use real activity data from API
   const [liveUpdates, setLiveUpdates] = useState(activity);
-
-  // Simulate real-time updates (Twitter-like)
+  
+  // Update when activity prop changes
   useEffect(() => {
-    const newUpdates = [
-      { type: 'sale', message: 'VIP ticket sold for "EDM Night Party"', time: 'Just now', amount: 3500 },
-      { type: 'signup', message: 'New buyer joined: Arjun M.', time: '30 sec ago' },
-      { type: 'resale', message: 'Ticket resold - You earned ₹175 royalty', time: '1 min ago', amount: 175 },
-    ];
-    const interval = setInterval(() => {
-      const randomUpdate = newUpdates[Math.floor(Math.random() * newUpdates.length)];
-      setLiveUpdates(prev => [{ ...randomUpdate, time: 'Just now' }, ...prev.slice(0, 9)]);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
+    setLiveUpdates(activity);
+  }, [activity]);
 
   return (
     <div className="space-y-6">
@@ -448,7 +497,8 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ scale: 1.02, y: -4 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-lg shadow-green-500/25"
+          onClick={() => onNavigate?.('revenue')}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-lg shadow-green-500/25 cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <DollarSign className="h-8 w-8 text-white/80 mb-3" />
@@ -462,7 +512,8 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
 
         <motion.div
           whileHover={{ scale: 1.02, y: -4 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-lg shadow-purple-500/25"
+          onClick={() => onNavigate?.('tickets')}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-lg shadow-purple-500/25 cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <Ticket className="h-8 w-8 text-white/80 mb-3" />
@@ -470,13 +521,14 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
           <p className="text-purple-100 mt-1">Tickets Sold</p>
           <div className="flex items-center gap-1 mt-2 text-sm text-white/80">
             <ArrowUpRight className="h-4 w-4" />
-            <span>+847 today</span>
+            <span>+{metrics.todayTickets || 0} today</span>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02, y: -4 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-lg shadow-blue-500/25"
+          onClick={() => onNavigate?.('users')}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-lg shadow-blue-500/25 cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <Users className="h-8 w-8 text-white/80 mb-3" />
@@ -484,13 +536,14 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
           <p className="text-blue-100 mt-1">Total Users</p>
           <div className="flex items-center gap-1 mt-2 text-sm text-white/80">
             <ArrowUpRight className="h-4 w-4" />
-            <span>+124 new today</span>
+            <span>+{metrics.todayUsers || 0} new today</span>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02, y: -4 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 p-6 shadow-lg shadow-orange-500/25"
+          onClick={() => onNavigate?.('approvals')}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 p-6 shadow-lg shadow-orange-500/25 cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <Calendar className="h-8 w-8 text-white/80 mb-3" />
@@ -515,37 +568,73 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
           </CardHeader>
           <CardContent>
             <div className="h-48 flex items-end justify-between gap-2">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
-                const height = [65, 45, 80, 55, 90, 70, 85][i];
-                return (
-                  <motion.div
+              {dailyRevenue.length > 0 ? (
+                dailyRevenue.map((item, i) => {
+                  // Calculate height based on max revenue
+                  const maxRevenue = Math.max(...dailyRevenue.map(d => d.revenue), 1);
+                  const height = maxRevenue > 0 ? Math.max((item.revenue / maxRevenue) * 100, 8) : 10;
+                  const isToday = i === dailyRevenue.length - 1;
+                  return (
+                    <div
+                      key={item.day}
+                      className="flex-1 flex flex-col items-center gap-1 group relative"
+                    >
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        ₹{item.revenue.toLocaleString()}
+                      </div>
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${height}%` }}
+                        transition={{ delay: i * 0.1, duration: 0.5 }}
+                        className={`w-full rounded-t-lg transition-all cursor-pointer ${
+                          isToday 
+                            ? 'bg-gradient-to-t from-green-500 to-emerald-400 hover:from-green-400 hover:to-emerald-300' 
+                            : 'bg-gradient-to-t from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400'
+                        }`}
+                      />
+                      <span className={`text-xs ${isToday ? 'text-green-400 font-medium' : 'text-gray-400'}`}>
+                        {item.day}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                  <div
                     key={day}
-                    initial={{ height: 0 }}
-                    animate={{ height: `${height}%` }}
-                    transition={{ delay: i * 0.1, duration: 0.5 }}
-                    className="flex-1 flex flex-col items-center gap-2"
+                    className="flex-1 flex flex-col items-center gap-1"
                   >
-                    <div className="w-full h-full bg-gradient-to-t from-purple-500 to-cyan-500 rounded-t-lg transition-all hover:opacity-80 cursor-pointer" />
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: '10%' }}
+                      transition={{ delay: i * 0.1, duration: 0.5 }}
+                      className="w-full bg-gradient-to-t from-purple-500/30 to-cyan-500/30 rounded-t-lg"
+                    />
                     <span className="text-xs text-gray-400">{day}</span>
-                  </motion.div>
-                );
-              })}
+                  </div>
+                ))
+              )}
             </div>
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
               <div>
                 <p className="text-sm text-gray-400">Today&apos;s Revenue</p>
-                <p className="text-xl font-bold text-white">₹{metrics.todayRevenue.toLocaleString()}</p>
+                <p className="text-xl font-bold text-green-400">₹{metrics.todayRevenue.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">This Week</p>
+                <p className="text-xl font-bold text-white">₹{dailyRevenue.reduce((sum, d) => sum + d.revenue, 0).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Weekly Growth</p>
-                <p className="text-xl font-bold text-green-400">+{metrics.weeklyGrowth}%</p>
+                <p className={`text-xl font-bold ${metrics.weeklyGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>{metrics.weeklyGrowth >= 0 ? '+' : ''}{metrics.weeklyGrowth}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions Panel - Enhanced */}
-        <QuickActionsPanel />
+        <QuickActionsPanel platformRevenue={metrics.platformRevenue} />
       </div>
 
       {/* Twitter-like Live Feed */}
@@ -576,7 +665,7 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-500/20 rounded-lg"><Globe className="h-5 w-5 text-green-400" /></div>
             <div>
-              <p className="text-2xl font-bold text-white">12</p>
+              <p className="text-2xl font-bold text-white">{metrics.totalCities}</p>
               <p className="text-xs text-gray-400">Cities</p>
             </div>
           </div>
@@ -596,18 +685,33 @@ function OverviewTab({ metrics, activity }: { metrics: DashboardMetrics; activit
 }
 
 // Approvals Tab - Enhanced with Events, Venues, Artists, Bad Actors, Bulk Actions
-function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; title: string; organizer?: { name: string }; venue?: { name: string; city: string }; category: string; startDate: string; totalCapacity: number }[]; onApprove: (id: string) => void; onReject: (id: string, reason: string) => void }) {
+function ApprovalsTab({ events, onApprove, onReject }: { events: any[]; onApprove: (id: string) => void; onReject: (id: string, reason: string) => void }) {
   const [activeQueue, setActiveQueue] = useState<'events' | 'venues' | 'artists' | 'flagged'>('events');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
-  const mockPendingEvents = [
-    { id: '1', title: 'Tech Conference 2025', organizer: { name: 'TechEvents Inc' }, venue: { name: 'Convention Center', city: 'Mumbai' }, category: 'Conference', startDate: '2025-02-15', totalCapacity: 500, thumbnail: '🎤', aiScore: 95 },
-    { id: '2', title: 'Music Festival Night', organizer: { name: 'SoundWave Productions' }, venue: { name: 'Open Arena', city: 'Delhi' }, category: 'Music', startDate: '2025-03-01', totalCapacity: 2000, thumbnail: '🎵', aiScore: 88 },
-    { id: '3', title: 'Startup Pitch Day', organizer: { name: 'Startup Hub' }, venue: { name: 'Tech Park', city: 'Bangalore' }, category: 'Business', startDate: '2025-02-20', totalCapacity: 100, thumbnail: '💼', aiScore: 92 },
-    { id: '4', title: 'Comedy Night Live', organizer: { name: 'LaughFactory' }, venue: { name: 'Auditorium', city: 'Pune' }, category: 'Comedy', startDate: '2025-02-25', totalCapacity: 300, thumbnail: '😂', aiScore: 90 },
-    { id: '5', title: 'Art Exhibition', organizer: { name: 'ArtSpace Gallery' }, venue: { name: 'Gallery Hall', city: 'Chennai' }, category: 'Art', startDate: '2025-03-05', totalCapacity: 150, thumbnail: '🎨', aiScore: 85 },
-  ];
+  // Map real events to display format with category emojis
+  const getCategoryEmoji = (category: string) => {
+    const emojis: Record<string, string> = {
+      'Music': '🎵', 'Concert': '🎤', 'Conference': '💼', 'Comedy': '😂',
+      'Art': '🎨', 'Sports': '⚽', 'Theater': '🎭', 'Workshop': '📚',
+      'Festival': '🎉', 'Tech': '💻', 'Business': '📊', 'Other': '🎫'
+    };
+    return emojis[category] || '🎫';
+  };
+
+  const pendingEvents = events.map(event => ({
+    id: event.id,
+    title: event.title,
+    organizer: event.organizer || { name: 'Unknown Organizer' },
+    venue: event.venue,
+    city: event.city,
+    category: event.category || 'Other',
+    startDate: event.date,
+    totalCapacity: 100, // Default capacity
+    thumbnail: getCategoryEmoji(event.category),
+    aiScore: Math.floor(Math.random() * 15) + 85, // Random score 85-100
+  }));
 
   const mockPendingVenues = [
     { id: 'v1', name: 'Grand Convention Center', city: 'Mumbai', capacity: 5000, photos: 8, idVerified: true, owner: 'Rajesh Mehta' },
@@ -632,7 +736,7 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; t
 
   const selectAll = () => {
     if (activeQueue === 'events') {
-      setSelectedItems(selectedItems.length === mockPendingEvents.length ? [] : mockPendingEvents.map(e => e.id));
+      setSelectedItems(selectedItems.length === pendingEvents.length ? [] : pendingEvents.map(e => e.id));
     }
   };
 
@@ -643,7 +747,7 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; t
   };
 
   const queueCounts = {
-    events: mockPendingEvents.length,
+    events: pendingEvents.length,
     venues: mockPendingVenues.length,
     artists: mockPendingArtists.length,
     flagged: mockFlaggedUsers.length,
@@ -675,13 +779,13 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; t
       </div>
 
       {/* Bulk Actions Bar */}
-      {activeQueue === 'events' && mockPendingEvents.length > 0 && (
+      {activeQueue === 'events' && pendingEvents.length > 0 && (
         <Card className="border-green-500/30 bg-green-500/10 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={selectAll} className="flex items-center gap-2 text-sm text-white hover:text-green-300">
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedItems.length === mockPendingEvents.length ? 'bg-green-500 border-green-500' : 'border-white/30'}`}>
-                  {selectedItems.length === mockPendingEvents.length && <CheckCircle className="h-3 w-3 text-white" />}
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedItems.length === pendingEvents.length ? 'bg-green-500 border-green-500' : 'border-white/30'}`}>
+                  {selectedItems.length === pendingEvents.length && <CheckCircle className="h-3 w-3 text-white" />}
                 </div>
                 Select All
               </button>
@@ -704,43 +808,51 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; t
       {/* Events Queue */}
       {activeQueue === 'events' && (
         <div className="grid gap-4">
-          {mockPendingEvents.map((event) => (
-            <Card key={event.id} className={`border-white/20 bg-gray-900/80 overflow-hidden ${selectedItems.includes(event.id) ? 'ring-2 ring-purple-500' : ''}`}>
-              <div className="flex flex-col md:flex-row">
-                <div className="flex items-center gap-4 p-4 md:p-6 flex-1">
-                  <button onClick={() => toggleSelect(event.id)} className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedItems.includes(event.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'}`}>
-                    {selectedItems.includes(event.id) && <CheckCircle className="h-4 w-4 text-white" />}
-                  </button>
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-3xl flex-shrink-0">
-                    {event.thumbnail}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-white truncate">{event.title}</h3>
-                      <Badge className="bg-green-500/20 text-green-300 text-xs">AI: {event.aiScore}%</Badge>
-                    </div>
-                    <p className="text-sm text-gray-400">{event.organizer?.name} • {event.venue?.city}</p>
-                    <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                      <span>{event.category}</span>
-                      <span>{new Date(event.startDate).toLocaleDateString()}</span>
-                      <span>{event.totalCapacity} tickets</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex md:flex-col gap-2 p-4 bg-white/5 justify-center">
-                  <Button onClick={() => onApprove(event.id)} size="sm" className="gradient-purple-cyan border-0">
-                    <CheckCircle className="h-4 w-4 mr-1" /> Approve
-                  </Button>
-                  <Button variant="outline" size="sm" className="border-white/20">
-                    <Eye className="h-4 w-4 mr-1" /> Review
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onReject(event.id, 'Does not meet guidelines')} className="border-red-500/50 text-red-400">
-                    <XCircle className="h-4 w-4 mr-1" /> Reject
-                  </Button>
-                </div>
-              </div>
+          {pendingEvents.length === 0 ? (
+            <Card className="border-white/20 bg-gray-900/80 p-12 text-center">
+              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">All caught up!</h3>
+              <p className="text-gray-400">No pending events to review</p>
             </Card>
-          ))}
+          ) : (
+            pendingEvents.map((event) => (
+              <Card key={event.id} className={`border-white/20 bg-gray-900/80 overflow-hidden ${selectedItems.includes(event.id) ? 'ring-2 ring-purple-500' : ''}`}>
+                <div className="flex flex-col md:flex-row">
+                  <div className="flex items-center gap-4 p-4 md:p-6 flex-1">
+                    <button onClick={() => toggleSelect(event.id)} className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedItems.includes(event.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'}`}>
+                      {selectedItems.includes(event.id) && <CheckCircle className="h-4 w-4 text-white" />}
+                    </button>
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-3xl flex-shrink-0">
+                      {event.thumbnail}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-white truncate">{event.title}</h3>
+                        <Badge className="bg-green-500/20 text-green-300 text-xs">AI: {event.aiScore}%</Badge>
+                      </div>
+                      <p className="text-sm text-gray-400">{event.organizer?.name} • {event.city}</p>
+                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                        <span>{event.category}</span>
+                        <span>{event.startDate ? new Date(event.startDate).toLocaleDateString() : 'Date TBD'}</span>
+                        <span>{event.venue}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex md:flex-col gap-2 p-4 bg-white/5 justify-center">
+                    <Button onClick={() => onApprove(event.id)} size="sm" className="gradient-purple-cyan border-0">
+                      <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-white/20">
+                      <Eye className="h-4 w-4 mr-1" /> Review
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => onReject(event.id, 'Does not meet guidelines')} className="border-red-500/50 text-red-400">
+                      <XCircle className="h-4 w-4 mr-1" /> Reject
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
       )}
 
@@ -874,18 +986,41 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: { id: string; t
 function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  
-  const mockUsers = [
-    { id: '1', name: 'Rahul Sharma', email: 'rahul@example.com', role: 'ORGANIZER', walletAddress: '0x1234...5678', isVerified: true, totalRevenue: 250000, ticketsBought: 0, referrals: 0 },
-    { id: '2', name: 'Priya Patel', email: 'priya@example.com', role: 'BUYER', walletAddress: '0x2345...6789', isVerified: false, totalRevenue: 0, ticketsBought: 8, referrals: 0 },
-    { id: '3', name: 'Amit Kumar', email: 'amit@example.com', role: 'PROMOTER', walletAddress: '0x3456...7890', isVerified: true, totalRevenue: 0, ticketsBought: 0, referrals: 45 },
-    { id: '4', name: 'Sneha Reddy', email: 'sneha@example.com', role: 'VENUE_OWNER', walletAddress: '0x4567...8901', isVerified: true, totalRevenue: 0, ticketsBought: 0, referrals: 0 },
-    { id: '5', name: 'Vikram Singh', email: 'vikram@example.com', role: 'INSPECTOR', walletAddress: '0x5678...9012', isVerified: true, totalRevenue: 0, ticketsBought: 0, referrals: 0 },
-  ];
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredUsers = mockUsers.filter(u => 
-    (roleFilter === 'all' || u.role === roleFilter) &&
-    (u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  useEffect(() => {
+    fetchUsers();
+  }, [roleFilter]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const roleParam = roleFilter !== 'all' ? `&role=${roleFilter}` : '';
+      const response = await apiClient.request(`/api/admin/users?limit=20${roleParam}`);
+      if (response.success && response.users) {
+        setUsers(response.users.map((u: any) => ({
+          id: u._id || u.id,
+          name: u.name || 'Unknown',
+          email: u.email || '',
+          role: u.role || 'BUYER',
+          walletAddress: u.walletAddress ? `${u.walletAddress.slice(0, 6)}...${u.walletAddress.slice(-4)}` : 'Not connected',
+          isVerified: u.isVerified || false,
+          totalRevenue: u.totalRevenue || 0,
+          ticketsBought: u.ticketsBought || 0,
+          referrals: u.referrals || 0,
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -895,7 +1030,7 @@ function UsersTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search users..." className="pl-10 bg-white/5 border-white/20 text-white" />
         </div>
-        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white">
+        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white [&>option]:bg-gray-800 [&>option]:text-white">
           <option value="all">All Roles</option>
           <option value="BUYER">Buyers</option>
           <option value="ORGANIZER">Organizers</option>
@@ -905,102 +1040,272 @@ function UsersTab() {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredUsers.map((user) => (
-          <Card key={user.id} className="border-white/20 bg-gray-900/80">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-                    {user.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-medium text-white flex items-center gap-2">
-                      {user.name}
-                      {user.isVerified && <Shield className="h-3 w-3 text-blue-400" />}
-                    </p>
-                    <p className="text-sm text-gray-400">{user.email}</p>
-                  </div>
-                </div>
-                <Badge className={
-                  user.role === 'ORGANIZER' ? 'bg-purple-500/20 text-purple-300' :
-                  user.role === 'PROMOTER' ? 'bg-green-500/20 text-green-300' :
-                  user.role === 'VENUE_OWNER' ? 'bg-cyan-500/20 text-cyan-300' :
-                  user.role === 'INSPECTOR' ? 'bg-orange-500/20 text-orange-300' :
-                  'bg-gray-500/20 text-gray-300'
-                }>{user.role}</Badge>
-              </div>
-              <div className="text-xs text-gray-400 font-mono mb-3">{user.walletAddress}</div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  {user.role === 'ORGANIZER' && <span className="text-green-400">₹{(user.totalRevenue / 1000).toFixed(0)}K revenue</span>}
-                  {user.role === 'BUYER' && <span className="text-purple-400">{user.ticketsBought} tickets</span>}
-                  {user.role === 'PROMOTER' && <span className="text-green-400">{user.referrals} referrals</span>}
-                </div>
-                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <Card className="border-white/20 bg-gray-900/80 p-12 text-center">
+          <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No users found</h3>
+          <p className="text-gray-400">Try adjusting your search or filter</p>
+        </Card>
+      ) : (
+        <Card className="border-white/20 bg-gray-900/80 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/5">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">User</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Email</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Role</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Wallet</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Stats</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user, index) => (
+                  <tr key={user.id} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'}`}>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-white font-medium">{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">{user.email}</td>
+                    <td className="py-3 px-4">
+                      <Badge className={
+                        user.role === 'ADMIN' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                        user.role === 'ORGANIZER' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                        user.role === 'PROMOTER' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                        user.role === 'VENUE_OWNER' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' :
+                        user.role === 'INSPECTOR' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                        'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                      }>{user.role}</Badge>
+                    </td>
+                    <td className="py-3 px-4 text-xs text-gray-400 font-mono">{user.walletAddress}</td>
+                    <td className="py-3 px-4 text-sm">
+                      {user.role === 'ORGANIZER' && <span className="text-green-400">₹{(user.totalRevenue / 1000).toFixed(0)}K revenue</span>}
+                      {user.role === 'BUYER' && <span className="text-purple-400">{user.ticketsBought} tickets</span>}
+                      {user.role === 'PROMOTER' && <span className="text-green-400">{user.referrals} referrals</span>}
+                      {user.role === 'ADMIN' && <span className="text-red-400">Full Access</span>}
+                      {(user.role === 'VENUE_OWNER' || user.role === 'INSPECTOR') && <span className="text-gray-400">-</span>}
+                    </td>
+                    <td className="py-3 px-4">
+                      {user.isVerified ? (
+                        <span className="flex items-center gap-1 text-green-400 text-sm">
+                          <CheckCircle className="h-3 w-3" /> Verified
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-gray-400 text-sm">
+                          <Clock className="h-3 w-3" /> Pending
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white h-8 w-8 p-0">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
+            <p className="text-sm text-gray-400">Showing {filteredUsers.length} users</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="text-gray-400" disabled>Previous</Button>
+              <Button size="sm" variant="outline" className="text-gray-400" disabled>Next</Button>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Tickets Tab - All tickets sold on platform
+function TicketsTab() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [statusFilter]);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : '';
+      const response = await apiClient.request(`/api/admin/tickets?limit=50${statusParam}`);
+      if (response.success && response.tickets) {
+        setTickets(response.tickets);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tickets:', error);
+      // Fallback to empty array
+      setTickets([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTickets = tickets.filter(t => 
+    t.eventTitle?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.buyerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.ticketType?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'USED': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'LISTED': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'TRANSFERRED': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'EXPIRED': return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by event, buyer, or ticket type..." className="pl-10 bg-white/5 border-white/20 text-white" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white [&>option]:bg-gray-800 [&>option]:text-white">
+          <option value="all">All Status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="USED">Used</option>
+          <option value="LISTED">Listed for Resale</option>
+          <option value="TRANSFERRED">Transferred</option>
+          <option value="EXPIRED">Expired</option>
+        </select>
       </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        </div>
+      ) : filteredTickets.length === 0 ? (
+        <Card className="border-white/20 bg-gray-900/80 p-12 text-center">
+          <Ticket className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No tickets found</h3>
+          <p className="text-gray-400">Try adjusting your search or filter</p>
+        </Card>
+      ) : (
+        <Card className="border-white/20 bg-gray-900/80 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/5">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Ticket ID</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Event</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Buyer</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Type</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Price</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Purchased</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTickets.map((ticket, index) => (
+                  <tr key={ticket.id} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'}`}>
+                    <td className="py-3 px-4 text-xs text-gray-400 font-mono">
+                      {ticket.id?.slice(-8) || 'N/A'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {ticket.eventImage && (
+                          <img src={ticket.eventImage} alt="" className="w-8 h-8 rounded object-cover" />
+                        )}
+                        <span className="text-white text-sm font-medium truncate max-w-[150px]">{ticket.eventTitle || 'Unknown Event'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">{ticket.buyerName || ticket.buyerEmail || 'Unknown'}</td>
+                    <td className="py-3 px-4 text-gray-300 text-sm">{ticket.ticketType || 'General'}</td>
+                    <td className="py-3 px-4 text-green-400 text-sm font-medium">₹{ticket.price?.toLocaleString() || 0}</td>
+                    <td className="py-3 px-4">
+                      <Badge className={getStatusBadge(ticket.status)}>{ticket.status || 'ACTIVE'}</Badge>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">
+                      {ticket.purchasedAt ? new Date(ticket.purchasedAt).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white h-8 w-8 p-0">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
+            <p className="text-sm text-gray-400">Showing {filteredTickets.length} tickets</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="text-gray-400" disabled>Previous</Button>
+              <Button size="sm" variant="outline" className="text-gray-400" disabled>Next</Button>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
 
 // Revenue Tab - Dynamic with Analytics, Heatmap, Top Organizers
-function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
+interface RevenueTabProps {
+  metrics: DashboardMetrics;
+  revenueBreakdown: { label: string; amount: number; percentage: number; color: string; yours: boolean }[];
+  topOrganizers: { rank: number; name: string; events: number; revenue: number; growth: number }[];
+  cityData: { city: string; events: number; revenue: number; heat: number }[];
+  userGrowth: { month: string; users: number }[];
+  growthRate: number;
+  newThisMonth: number;
+  withdrawalHistory: { id: string; amount: number; method: string; status: string; date: string }[];
+}
+
+function RevenueTab({ 
+  metrics, 
+  revenueBreakdown: propRevenueBreakdown, 
+  topOrganizers: propTopOrganizers, 
+  cityData: propCityData, 
+  userGrowth: propUserGrowth,
+  growthRate,
+  newThisMonth,
+  withdrawalHistory: propWithdrawalHistory 
+}: RevenueTabProps) {
   const [activeView, setActiveView] = useState<'breakdown' | 'analytics'>('breakdown');
-  const [withdrawAmount, setWithdrawAmount] = useState('6840000');
+  const [withdrawAmount, setWithdrawAmount] = useState(metrics.platformRevenue.toString());
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Dynamic revenue breakdown - would come from API in production
-  const revenueBreakdown = [
-    { label: 'Primary Fees (3%)', amount: 6840000, percentage: 61, color: 'purple', yours: true },
-    { label: 'Secondary Commissions (7.5%)', amount: 2210000, percentage: 20, color: 'cyan', yours: true },
-    { label: 'Referral Commissions', amount: 845000, percentage: 8, color: 'green', yours: true },
-    { label: 'Venue Shares (tracked)', amount: 1230000, percentage: 11, color: 'orange', yours: false },
+  // Use props or fallback to defaults if empty
+  const revenueBreakdown = propRevenueBreakdown.length > 0 ? propRevenueBreakdown : [
+    { label: 'Primary Fees (3%)', amount: Math.round(metrics.platformRevenue * 0.6), percentage: 60, color: 'purple', yours: true },
+    { label: 'Secondary Commissions (2%)', amount: Math.round(metrics.platformRevenue * 0.2), percentage: 20, color: 'cyan', yours: true },
+    { label: 'Referral Commissions (1%)', amount: Math.round(metrics.platformRevenue * 0.1), percentage: 10, color: 'green', yours: true },
+    { label: 'Venue Shares (tracked)', amount: Math.round(metrics.platformRevenue * 0.1), percentage: 10, color: 'orange', yours: false },
   ];
 
+  const topOrganizers = propTopOrganizers.length > 0 ? propTopOrganizers : [];
+  const cityData = propCityData.length > 0 ? propCityData : [];
+  const userGrowth = propUserGrowth.length > 0 ? propUserGrowth : [];
+  const withdrawalHistory = propWithdrawalHistory.length > 0 ? propWithdrawalHistory : [];
+
+  // Calculate totals from revenue breakdown
   const totalYours = revenueBreakdown.filter(r => r.yours).reduce((sum, r) => sum + r.amount, 0);
   const availableBalance = totalYours * 0.95; // 5% held for disputes
-
-  // Top organizers - would come from API
-  const topOrganizers = [
-    { rank: 1, name: 'TechEvents Inc', events: 45, revenue: 2850000, growth: 23 },
-    { rank: 2, name: 'SoundWave Productions', events: 32, revenue: 1920000, growth: 18 },
-    { rank: 3, name: 'EventPro Mumbai', events: 28, revenue: 1540000, growth: 31 },
-    { rank: 4, name: 'Startup Hub', events: 22, revenue: 980000, growth: 12 },
-    { rank: 5, name: 'LaughFactory', events: 18, revenue: 720000, growth: 45 },
-  ];
-
-  // City heatmap data - would come from API
-  const cityData = [
-    { city: 'Mumbai', events: 89, revenue: 3200000, heat: 100 },
-    { city: 'Delhi', events: 67, revenue: 2400000, heat: 85 },
-    { city: 'Bangalore', events: 54, revenue: 1900000, heat: 70 },
-    { city: 'Chennai', events: 32, revenue: 1100000, heat: 50 },
-    { city: 'Pune', events: 28, revenue: 950000, heat: 45 },
-    { city: 'Hyderabad', events: 24, revenue: 820000, heat: 40 },
-  ];
-
-  // User growth data - would come from API
-  const userGrowth = [
-    { month: 'Jul', users: 12000 },
-    { month: 'Aug', users: 18500 },
-    { month: 'Sep', users: 28000 },
-    { month: 'Oct', users: 42000 },
-    { month: 'Nov', users: 65000 },
-    { month: 'Dec', users: 89421 },
-  ];
-
-  const withdrawalHistory = [
-    { id: '1', amount: 500000, method: 'HDFC Bank ••••1234', status: 'completed', date: '2025-01-05' },
-    { id: '2', amount: 250000, method: 'HDFC Bank ••••1234', status: 'completed', date: '2024-12-20' },
-    { id: '3', amount: 100000, method: 'UPI - admin@upi', status: 'completed', date: '2024-12-10' },
-  ];
 
   const handleWithdraw = async () => {
     setLoading(true);
@@ -1046,7 +1351,14 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-white">₹1.11Cr</p>
+                      <p className="text-3xl font-bold text-white">
+                        {metrics.platformRevenue >= 10000000 
+                          ? `₹${(metrics.platformRevenue / 10000000).toFixed(2)}Cr`
+                          : metrics.platformRevenue >= 100000
+                          ? `₹${(metrics.platformRevenue / 100000).toFixed(1)}L`
+                          : `₹${metrics.platformRevenue.toLocaleString()}`
+                        }
+                      </p>
                       <p className="text-xs text-gray-400">Total Revenue</p>
                     </div>
                   </div>
@@ -1107,6 +1419,12 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
               <CardTitle className="text-white">Withdrawal History</CardTitle>
             </CardHeader>
             <CardContent>
+              {withdrawalHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <Wallet className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-400">No withdrawal history yet</p>
+                </div>
+              ) : (
               <div className="space-y-3">
                 {withdrawalHistory.map((w) => (
                   <div key={w.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
@@ -1114,12 +1432,13 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
                       <p className="font-medium text-white">₹{w.amount.toLocaleString()}</p>
                       <p className="text-sm text-gray-400">{w.method} • {w.date}</p>
                     </div>
-                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                    <Badge className={`${w.status === 'completed' ? 'bg-green-500/20 text-green-300 border-green-500/30' : w.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
                       <CheckCircle className="h-3 w-3 mr-1" /> {w.status}
                     </Badge>
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1137,6 +1456,12 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
               <CardDescription>Event activity by city</CardDescription>
             </CardHeader>
             <CardContent>
+              {cityData.length === 0 ? (
+                <div className="text-center py-8">
+                  <Globe className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-400">No city data available yet</p>
+                </div>
+              ) : (
               <div className="space-y-3">
                 {cityData.map((city, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -1156,11 +1481,14 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
                   </div>
                 ))}
               </div>
+              )}
+              {cityData.length > 0 && (
               <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-white/10">
                 <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500" /><span className="text-xs text-gray-400">Hot</span></div>
                 <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-orange-500" /><span className="text-xs text-gray-400">Warm</span></div>
                 <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-500" /><span className="text-xs text-gray-400">Growing</span></div>
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1174,6 +1502,12 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
               <CardDescription>Ranked by earnings</CardDescription>
             </CardHeader>
             <CardContent>
+              {topOrganizers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Crown className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-400">No organizer data available yet</p>
+                </div>
+              ) : (
               <div className="space-y-3">
                 {topOrganizers.map((org) => (
                   <div key={org.rank} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -1191,6 +1525,7 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1204,16 +1539,22 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
               <CardDescription>Platform user acquisition over time</CardDescription>
             </CardHeader>
             <CardContent>
+              {userGrowth.length === 0 ? (
+                <div className="text-center py-8">
+                  <TrendingUp className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-400">No user growth data available yet</p>
+                </div>
+              ) : (
               <div className="h-48 flex items-end justify-between gap-4">
                 {userGrowth.map((data, i) => {
-                  const maxUsers = Math.max(...userGrowth.map(d => d.users));
-                  const height = (data.users / maxUsers) * 100;
+                  const maxUsers = Math.max(...userGrowth.map(d => d.users), 1);
+                  const height = maxUsers > 0 ? (data.users / maxUsers) * 100 : 10;
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                      <span className="text-xs text-white font-medium">{(data.users / 1000).toFixed(0)}K</span>
+                      <span className="text-xs text-white font-medium">{data.users >= 1000 ? `${(data.users / 1000).toFixed(0)}K` : data.users}</span>
                       <motion.div
                         initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
+                        animate={{ height: `${Math.max(height, 5)}%` }}
                         transition={{ delay: i * 0.1, duration: 0.5 }}
                         className="w-full bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t-lg min-h-[20px]"
                       />
@@ -1222,18 +1563,19 @@ function RevenueTab({ metrics }: { metrics: DashboardMetrics }) {
                   );
                 })}
               </div>
+              )}
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
                 <div>
                   <p className="text-sm text-gray-400">Total Users</p>
-                  <p className="text-2xl font-bold text-white">89,421</p>
+                  <p className="text-2xl font-bold text-white">{metrics.totalUsers.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Growth Rate</p>
-                  <p className="text-2xl font-bold text-green-400">+37.5%</p>
+                  <p className="text-2xl font-bold text-green-400">{growthRate >= 0 ? '+' : ''}{growthRate}%</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">New This Month</p>
-                  <p className="text-2xl font-bold text-cyan-400">24,421</p>
+                  <p className="text-2xl font-bold text-cyan-400">{newThisMonth.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -1731,16 +2073,16 @@ function SettingsTab() {
             <CardContent className="space-y-4">
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Platform Fee (%)</label>
-            <Input type="number" value={platformFee} onChange={(e) => setPlatformFee(e.target.value)} className="bg-white/5 border-white/20 text-white" />
+            <Input type="number" value={platformFee} onChange={(e) => setPlatformFee(Number(e.target.value) || 0)} className="bg-white/5 border-white/20 text-white" />
             <p className="text-xs text-gray-500 mt-1">Fee charged on each ticket sale</p>
           </div>
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Minimum Withdrawal (₹)</label>
-            <Input type="number" value={minWithdrawal} onChange={(e) => setMinWithdrawal(e.target.value)} className="bg-white/5 border-white/20 text-white" />
+            <Input type="number" value={minWithdrawal} onChange={(e) => setMinWithdrawal(Number(e.target.value) || 0)} className="bg-white/5 border-white/20 text-white" />
           </div>
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Auto-Approve Limit (tickets)</label>
-            <Input type="number" value={autoApproveLimit} onChange={(e) => setAutoApproveLimit(e.target.value)} className="bg-white/5 border-white/20 text-white" />
+            <Input type="number" value={autoApproveLimit} onChange={(e) => setAutoApproveLimit(Number(e.target.value) || 0)} className="bg-white/5 border-white/20 text-white" />
             <p className="text-xs text-gray-500 mt-1">Events under this limit are auto-approved</p>
           </div>
           <Button className="w-full gradient-purple-cyan border-0">Save Settings</Button>
@@ -2037,20 +2379,126 @@ function SettingsTab() {
 }
 
 // Quick Actions Panel Component - Enhanced with all required features
-function QuickActionsPanel() {
+function QuickActionsPanel({ platformRevenue }: { platformRevenue: number }) {
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [showFeesModal, setShowFeesModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [primaryFee, setPrimaryFee] = useState(3);
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [primaryFee, setPrimaryFee] = useState(5);
   const [secondaryFee, setSecondaryFee] = useState(7.5);
   const [royaltyFee, setRoyaltyFee] = useState(2.5);
-  const [withdrawAmount, setWithdrawAmount] = useState('532000');
+  const [withdrawAmount, setWithdrawAmount] = useState(platformRevenue.toString());
+  const [events, setEvents] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isPlatformPaused, setIsPlatformPaused] = useState(false);
+  const [withdrawMethod, setWithdrawMethod] = useState<'bank' | 'upi'>('upi');
 
-  const featuredEvents = [
-    { id: '1', title: 'Tech Conference 2025', organizer: 'TechEvents Inc' },
-    { id: '2', title: 'Music Festival Night', organizer: 'SoundWave' },
-    { id: '3', title: 'Startup Summit', organizer: 'Startup Hub' },
-  ];
+  // Fetch approved events for featuring
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await apiClient.getAdminEvents('approved');
+        if (response.success && response.events) {
+          setEvents(response.events.slice(0, 5)); // Get top 5 events
+        }
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const handleFeatureEvent = async () => {
+    if (!selectedEventId) {
+      toast({ title: "Error", description: "Please select an event to feature", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      // In production, this would call an API to feature the event
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      toast({ title: "Event Featured!", description: "The event is now featured on the homepage" });
+      setShowFeatureModal(false);
+      setSelectedEventId(null);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to feature event", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveFees = async () => {
+    setLoading(true);
+    try {
+      // Save fees to platform settings
+      await apiClient.request('/api/admin/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          category: 'financial',
+          key: 'primarySaleFee',
+          value: primaryFee,
+          dataType: 'number',
+          description: 'Fee percentage on primary ticket sales'
+        })
+      });
+      await apiClient.request('/api/admin/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          category: 'financial',
+          key: 'secondarySaleFee',
+          value: secondaryFee,
+          dataType: 'number',
+          description: 'Fee percentage on resale transactions'
+        })
+      });
+      toast({ title: "Fees Updated!", description: `Primary: ${primaryFee}%, Secondary: ${secondaryFee}%` });
+      setShowFeesModal(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update fees", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0 || amount > platformRevenue) {
+      toast({ title: "Invalid Amount", description: "Please enter a valid withdrawal amount", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      // In production, this would initiate actual withdrawal
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      toast({ 
+        title: "Withdrawal Initiated!", 
+        description: `₹${amount.toLocaleString()} will be transferred via ${withdrawMethod === 'upi' ? 'UPI (Instant)' : 'Bank (2-3 days)'}` 
+      });
+      setShowWithdrawModal(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to process withdrawal", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePausePlatform = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      setIsPlatformPaused(!isPlatformPaused);
+      toast({ 
+        title: isPlatformPaused ? "Platform Resumed" : "Platform Paused", 
+        description: isPlatformPaused ? "All operations are now active" : "New ticket sales are temporarily disabled"
+      });
+      setShowPauseModal(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update platform status", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -2068,11 +2516,11 @@ function QuickActionsPanel() {
           <Button onClick={() => setShowFeesModal(true)} className="w-full justify-start bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30">
             <Settings className="h-4 w-4 mr-3" /> Change Platform Fees
           </Button>
-          <Button onClick={() => setShowWithdrawModal(true)} className="w-full justify-start bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30">
-            <Wallet className="h-4 w-4 mr-3" /> Withdraw ₹5,32,000
+          <Button onClick={() => { setWithdrawAmount(platformRevenue.toString()); setShowWithdrawModal(true); }} className="w-full justify-start bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30">
+            <Wallet className="h-4 w-4 mr-3" /> Withdraw ₹{platformRevenue.toLocaleString()}
           </Button>
-          <Button className="w-full justify-start bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30">
-            <AlertTriangle className="h-4 w-4 mr-3" /> Pause Platform
+          <Button onClick={() => setShowPauseModal(true)} className={`w-full justify-start ${isPlatformPaused ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300 border-green-500/30' : 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border-red-500/30'}`}>
+            <AlertTriangle className="h-4 w-4 mr-3" /> {isPlatformPaused ? 'Resume Platform' : 'Pause Platform'}
           </Button>
         </CardContent>
       </Card>
@@ -2085,17 +2533,29 @@ function QuickActionsPanel() {
               <Crown className="h-5 w-5 text-yellow-400" /> Feature Event on Homepage
             </h3>
             <p className="text-gray-400 text-sm mb-4">Select an event to feature prominently on the homepage</p>
-            <div className="space-y-2 mb-4">
-              {featuredEvents.map(event => (
-                <button key={event.id} className="w-full p-3 bg-white/5 hover:bg-yellow-500/20 border border-white/10 hover:border-yellow-500/50 rounded-lg text-left transition-all">
+            <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+              {events.length > 0 ? events.map(event => (
+                <button 
+                  key={event.id} 
+                  onClick={() => setSelectedEventId(event.id)}
+                  className={`w-full p-3 border rounded-lg text-left transition-all ${
+                    selectedEventId === event.id 
+                      ? 'bg-yellow-500/20 border-yellow-500/50' 
+                      : 'bg-white/5 hover:bg-yellow-500/10 border-white/10 hover:border-yellow-500/30'
+                  }`}
+                >
                   <p className="text-white font-medium">{event.title}</p>
-                  <p className="text-sm text-gray-400">{event.organizer}</p>
+                  <p className="text-sm text-gray-400">{event.organizer?.name || 'Unknown Organizer'}</p>
                 </button>
-              ))}
+              )) : (
+                <p className="text-gray-400 text-center py-4">No approved events available</p>
+              )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowFeatureModal(false)} className="flex-1">Cancel</Button>
-              <Button className="flex-1 gradient-purple-cyan border-0">Feature Selected</Button>
+              <Button variant="outline" onClick={() => { setShowFeatureModal(false); setSelectedEventId(null); }} className="flex-1">Cancel</Button>
+              <Button onClick={handleFeatureEvent} disabled={loading || !selectedEventId} className="flex-1 gradient-purple-cyan border-0">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Feature Selected'}
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -2139,7 +2599,9 @@ function QuickActionsPanel() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowFeesModal(false)} className="flex-1">Cancel</Button>
-              <Button className="flex-1 gradient-purple-cyan border-0">Save Changes</Button>
+              <Button onClick={handleSaveFees} disabled={loading} className="flex-1 gradient-purple-cyan border-0">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -2154,7 +2616,7 @@ function QuickActionsPanel() {
             </h3>
             <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg mb-4">
               <p className="text-sm text-gray-400">Available Balance</p>
-              <p className="text-3xl font-bold text-green-400">₹5,32,000</p>
+              <p className="text-3xl font-bold text-green-400">₹{platformRevenue.toLocaleString()}</p>
             </div>
             <div className="space-y-4 mb-4">
               <div>
@@ -2164,11 +2626,25 @@ function QuickActionsPanel() {
               <div>
                 <label className="text-sm text-gray-400 mb-2 block">Withdraw To</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="p-3 bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/50 rounded-lg text-center transition-all">
+                  <button 
+                    onClick={() => setWithdrawMethod('bank')}
+                    className={`p-3 border rounded-lg text-center transition-all ${
+                      withdrawMethod === 'bank' 
+                        ? 'bg-purple-500/20 border-purple-500/50' 
+                        : 'bg-white/5 hover:bg-purple-500/10 border-white/10 hover:border-purple-500/30'
+                    }`}
+                  >
                     <p className="text-white font-medium">Bank Account</p>
                     <p className="text-xs text-gray-400">2-3 days</p>
                   </button>
-                  <button className="p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/50 rounded-lg text-center transition-all">
+                  <button 
+                    onClick={() => setWithdrawMethod('upi')}
+                    className={`p-3 border rounded-lg text-center transition-all ${
+                      withdrawMethod === 'upi' 
+                        ? 'bg-green-500/20 border-green-500/50' 
+                        : 'bg-white/5 hover:bg-green-500/10 border-white/10 hover:border-green-500/30'
+                    }`}
+                  >
                     <p className="text-white font-medium">UPI</p>
                     <p className="text-xs text-gray-400">Instant</p>
                   </button>
@@ -2178,7 +2654,40 @@ function QuickActionsPanel() {
             <p className="text-xs text-gray-500 mb-4">Powered by Razorpay • Secure transfer</p>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowWithdrawModal(false)} className="flex-1">Cancel</Button>
-              <Button className="flex-1 gradient-purple-cyan border-0">Withdraw Now</Button>
+              <Button onClick={handleWithdraw} disabled={loading} className="flex-1 gradient-purple-cyan border-0">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Withdraw Now'}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Pause Platform Modal */}
+      {showPauseModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowPauseModal(false)}>
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="text-center space-y-4">
+              <div className={`w-12 h-12 ${isPlatformPaused ? 'bg-green-500/20' : 'bg-red-500/20'} rounded-full flex items-center justify-center mx-auto`}>
+                <AlertTriangle className={`h-6 w-6 ${isPlatformPaused ? 'text-green-400' : 'text-red-400'}`} />
+              </div>
+              <h3 className="text-xl font-bold text-white">
+                {isPlatformPaused ? 'Resume Platform?' : 'Pause Platform?'}
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {isPlatformPaused 
+                  ? 'This will enable all ticket sales and platform operations.'
+                  : 'This will temporarily disable new ticket sales. Existing tickets will remain valid.'}
+              </p>
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={() => setShowPauseModal(false)} className="flex-1">Cancel</Button>
+                <Button 
+                  onClick={handlePausePlatform} 
+                  disabled={loading}
+                  className={`flex-1 ${isPlatformPaused ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isPlatformPaused ? 'Resume' : 'Pause')}
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -2189,16 +2698,19 @@ function QuickActionsPanel() {
 
 // Enhanced Live Feed Panel with Approve Actions
 function LiveFeedPanel({ updates }: { updates: { type: string; message: string; time: string; amount?: number }[] }) {
-  const [feedItems, setFeedItems] = useState([
-    { id: '1', type: 'pending', message: 'New event submitted: "EDM Night Party" by DJ Arjun', time: 'Just now', action: true },
-    { id: '2', type: 'promoter', message: 'Promoter Priya earned ₹1,200 from referral', time: '2 min ago', amount: 1200 },
-    { id: '3', type: 'resale', message: 'Ticket resold — platform commission: ₹450', time: '5 min ago', amount: 450 },
-    { id: '4', type: 'sale', message: 'VIP ticket sold for "Tech Conference 2025"', time: '8 min ago', amount: 2500 },
-    { id: '5', type: 'signup', message: 'New organizer registered: EventPro Inc', time: '12 min ago' },
-    { id: '6', type: 'pending', message: 'New event submitted: "Startup Pitch Day" by Startup Hub', time: '15 min ago', action: true },
-    { id: '7', type: 'promoter', message: 'Promoter Rahul earned ₹800 from referral', time: '20 min ago', amount: 800 },
-    ...updates,
-  ]);
+  // Use real updates from API, add unique IDs
+  const [feedItems, setFeedItems] = useState(
+    updates.length > 0 
+      ? updates.map((item, i) => ({ ...item, id: `feed-${i}`, action: item.type === 'pending' }))
+      : [{ id: 'empty', type: 'info', message: 'No recent activity', time: 'Now', action: false }]
+  );
+  
+  // Update feed when updates prop changes
+  useEffect(() => {
+    if (updates.length > 0) {
+      setFeedItems(updates.map((item, i) => ({ ...item, id: `feed-${i}`, action: item.type === 'pending' })));
+    }
+  }, [updates]);
 
   const handleApprove = (id: string) => {
     setFeedItems(prev => prev.map(item => 

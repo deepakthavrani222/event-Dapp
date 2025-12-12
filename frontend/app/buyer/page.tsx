@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
-import { OpenSeaEventCard } from '@/components/shared/opensea-event-card';
-import { HorizontalEventCarousel } from '@/components/shared/horizontal-event-carousel';
 import { EnhancedEventCarousel } from '@/components/shared/enhanced-event-carousel';
-import { CategoryCard } from '@/components/shared/category-card';
 import { IntegratedArtistHub } from '@/components/shared/integrated-artist-hub';
 
 import { Button } from '@/components/ui/button';
@@ -21,16 +18,7 @@ import {
 import { motion } from 'framer-motion';
 import type { Event } from '@/lib/types';
 
-const categories = [
-  { title: "Music", icon: "🎸", href: "/buyer?category=music" },
-  { title: "Nightlife", icon: "🪩", href: "/buyer?category=nightlife" },
-  { title: "Comedy", icon: "🎤", href: "/buyer?category=comedy" },
-  { title: "Sports", icon: "🏟️", href: "/buyer?category=sports" },
-  { title: "Performances", icon: "🎭", href: "/buyer?category=theater" },
-  { title: "Food & Drinks", icon: "🍷", href: "/buyer?category=food" },
-  { title: "Fests & Fairs", icon: "🎪", href: "/buyer?category=festival" },
-  { title: "Social Mixers", icon: "🥂", href: "/buyer?category=social" },
-];
+
 
 
 
@@ -68,7 +56,7 @@ export default function BuyerDashboard() {
   const uniqueCategories = getUniqueCategories();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Hero Section for Buyer */}
       <section className="relative py-12 overflow-hidden">
         {/* Background Effects */}
@@ -98,27 +86,7 @@ export default function BuyerDashboard() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="container py-8 px-12 mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Browse Categories</h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          {categories.map((category, idx) => (
-            <motion.div
-              key={category.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <CategoryCard {...category} />
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
-      {/* Integrated Artist Hub */}
-      <IntegratedArtistHub />
 
       {/* Events Grid */}
       <section className="container py-8 px-12 mx-auto max-w-7xl space-y-12">
@@ -140,34 +108,47 @@ export default function BuyerDashboard() {
           </div>
         ) : (
           <>
-            {/* Featured Events - Large Cards */}
+            {/* All Events - First */}
             <EnhancedEventCarousel
-              title="Featured Events"
-              subtitle="Hand-picked premium experiences for you"
-              events={filteredEvents.slice(0, 6)}
-              variant="large"
+              title="All Events"
+              subtitle="Browse all available events"
+              events={filteredEvents}
+              variant="default"
             />
 
-            {/* Dynamic Category Sections */}
-            {uniqueCategories.map((category, index) => {
-              // Use small cards only for Sports and Music/Concert events
-              const useSmallCards = category.toLowerCase() === 'sports' || 
-                                   category.toLowerCase() === 'music' || 
-                                   category.toLowerCase() === 'concert'
-              
-              return (
+            {/* Comedy Events - Second */}
+            <EnhancedEventCarousel
+              title="Comedy Events"
+              subtitle="Best comedy experiences"
+              events={filteredEvents}
+              variant="default"
+              categoryFilter="Comedy"
+            />
+          </>
+        )}
+      </section>
+
+      {/* Integrated Artist Hub - Third */}
+      <IntegratedArtistHub />
+
+      <section className="container py-8 px-12 mx-auto max-w-7xl space-y-12">
+        {!loading && filteredEvents.length > 0 && (
+          <>
+            {/* Other Category Sections */}
+            {uniqueCategories
+              .filter(category => category.toLowerCase() !== 'comedy')
+              .map((category) => (
                 <EnhancedEventCarousel
                   key={category}
                   title={`${category} Events`}
                   subtitle={`Best ${category.toLowerCase()} experiences`}
                   events={filteredEvents}
-                  variant={useSmallCards ? "compact" : "large"}
+                  variant="default"
                   categoryFilter={category}
                 />
-              )
-            })}
+              ))}
 
-            {/* Trending Now - Trending Cards */}
+            {/* Trending Now */}
             {filteredEvents.length > 8 && (
               <EnhancedEventCarousel
                 title="Trending Now"
@@ -176,14 +157,6 @@ export default function BuyerDashboard() {
                 variant="trending"
               />
             )}
-
-            {/* All Events - Default Cards */}
-            <EnhancedEventCarousel
-              title="All Events"
-              subtitle="Browse all available events"
-              events={filteredEvents}
-              variant="default"
-            />
           </>
         )}
       </section>

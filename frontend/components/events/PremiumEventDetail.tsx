@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { format } from "date-fns"
 import { EnhancedPurchaseDialog } from "@/components/events/EnhancedPurchaseDialog"
-import { GuestBuyingFlow } from "@/components/buyer/GuestBuyingFlow"
+
 import { useAuth } from "@/lib/context/AuthContext"
 import { Footer } from "@/components/shared/footer"
 
@@ -32,7 +32,7 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [ticketSelections, setTicketSelections] = useState<TicketSelection[]>([])
   const [showCart, setShowCart] = useState(false)
-  const [showGuestFlow, setShowGuestFlow] = useState(false)
+
 
   const formatDate = (dateStr: string) => {
     try {
@@ -121,9 +121,23 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
-            src={event.image || "/placeholder.svg"}
+            src={(() => {
+              if (!event.image) return '/concert-stage-purple-lights.jpg'
+              if (event.image === '/placeholder.svg') return '/concert-stage-purple-lights.jpg'
+              if (event.image.startsWith('blob:')) return '/concert-stage-purple-lights.jpg'
+              if (event.image.includes('cloudinary.com')) return event.image
+              if (event.image.includes('unsplash.com')) return event.image
+              if (event.image.startsWith('https://') || event.image.startsWith('http://')) return event.image
+              if (event.image.startsWith('/') && !event.image.includes('placeholder')) return event.image
+              return '/concert-stage-purple-lights.jpg'
+            })()}
             alt={event.title}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.log('PremiumEventDetail - Image failed to load:', event.image);
+              const target = e.target as HTMLImageElement;
+              target.src = '/concert-stage-purple-lights.jpg';
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
         </div>
@@ -496,14 +510,16 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
                         totalTickets: getTotalTickets()
                       })
                     } else {
-                      setShowGuestFlow(true)
+                      // Redirect to login with return URL
+                      const returnUrl = encodeURIComponent(window.location.pathname)
+                      window.location.href = `/login?redirect=${returnUrl}`
                     }
                   }}
                   className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white font-semibold h-14 rounded-xl text-lg"
                 >
                   {isAuthenticated 
                     ? `Purchase ${getTotalTickets()} Ticket${getTotalTickets() > 1 ? 's' : ''}`
-                    : `Buy ${getTotalTickets()} Ticket${getTotalTickets() > 1 ? 's' : ''}`
+                    : `Login to Buy ${getTotalTickets()} Ticket${getTotalTickets() > 1 ? 's' : ''}`
                   }
                   <ArrowLeft className="h-5 w-5 ml-2 rotate-180" />
                 </Button>
@@ -545,19 +561,7 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
         />
       )}
 
-      {/* Guest Buying Flow */}
-      {showGuestFlow && (
-        <GuestBuyingFlow
-          event={event}
-          ticketSelections={ticketSelections}
-          totalAmount={getTotalAmount()}
-          onClose={() => setShowGuestFlow(false)}
-          onSuccess={() => {
-            setShowGuestFlow(false)
-            setTicketSelections([])
-          }}
-        />
-      )}
+
 
       {/* Footer */}
       <Footer />

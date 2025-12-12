@@ -49,6 +49,7 @@ export const viewport: Viewport = {
 }
 
 import { ClientProviders } from "@/components/providers/ClientProviders";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
@@ -64,6 +65,7 @@ export default function RootLayout({
         <ClientProviders>
           {children}
         </ClientProviders>
+        <Toaster />
         <Analytics />
       </body>
     </html>

@@ -1,33 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { apiClient } from "@/lib/api/client"
 import type { Event } from "@/lib/types"
 import { PublicHeader } from "@/components/shared/public-header"
-import { OpenSeaEventCard } from "@/components/shared/opensea-event-card"
-import { HorizontalEventCarousel } from "@/components/shared/horizontal-event-carousel"
 import { EnhancedEventCarousel } from "@/components/shared/enhanced-event-carousel"
-import { CategoryCard } from "@/components/shared/category-card"
 import { IntegratedArtistHub } from "@/components/shared/integrated-artist-hub"
 
 import { Button } from "@/components/ui/button"
-
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronRight } from "lucide-react"
-import { motion } from "framer-motion"
-import { Badge } from "@/components/ui/badge"
+import { ChevronRight, ChevronLeft, MapPin, Calendar } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Footer } from "@/components/shared/footer"
+import Link from "next/link"
 
-const categories = [
-  { title: "Music", icon: "🎸", href: "/events?category=music" },
-  { title: "Nightlife", icon: "🪩", href: "/events?category=nightlife" },
-  { title: "Comedy", icon: "🎤", href: "/events?category=comedy" },
-  { title: "Sports", icon: "🏟️", href: "/events?category=sports" },
-  { title: "Performances", icon: "🎭", href: "/events?category=theater" },
-  { title: "Food & Drinks", icon: "🍷", href: "/events?category=food" },
-  { title: "Fests & Fairs", icon: "🎪", href: "/events?category=festival" },
-  { title: "Social Mixers", icon: "🥂", href: "/events?category=social" },
-]
+
 
 
 
@@ -36,6 +22,7 @@ const categories = [
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
     async function fetchEvents() {
@@ -51,198 +38,188 @@ export default function HomePage() {
     fetchEvents()
   }, [])
 
+  // Featured events for carousel (first 5)
+  const featuredEvents = events.slice(0, 5)
+
+  // Auto-slide every 5 seconds
+  useEffect(() => {
+    if (featuredEvents.length === 0) return
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % featuredEvents.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [featuredEvents.length])
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % featuredEvents.length)
+  }, [featuredEvents.length])
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length)
+  }, [featuredEvents.length])
+
   // Show all events without filtering
   const filteredEvents = events
 
   // Get unique categories from events
   const getUniqueCategories = () => {
     const categories = [...new Set(events.map(event => event.category).filter(Boolean))]
-    return categories.slice(0, 6) // Limit to 6 categories for better layout
+    return categories.slice(0, 6)
   }
 
   const uniqueCategories = getUniqueCategories()
 
+  // Get valid image for event
+  const getEventImage = (event: Event) => {
+    if (event.image && 
+        !event.image.startsWith('blob:') && 
+        event.image !== '/placeholder.svg' &&
+        (event.image.includes('cloudinary.com') || 
+         event.image.includes('unsplash.com') ||
+         event.image.startsWith('https://') ||
+         event.image.startsWith('http://'))) {
+      return event.image
+    }
+    // Default images based on category
+    const defaults: Record<string, string> = {
+      music: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1600&h=900&fit=crop',
+      comedy: 'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=1600&h=900&fit=crop',
+      sports: 'https://images.unsplash.com/photo-1461896836934- voices-of-the-game?w=1600&h=900&fit=crop',
+      festival: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&h=900&fit=crop',
+    }
+    return defaults[event.category?.toLowerCase()] || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1600&h=900&fit=crop'
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <PublicHeader />
-      {/* Hero Section - Left Centered */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-background to-cyan-500/10" />
-        
-        {/* Animated Orbs */}
-        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)`,
-              backgroundSize: "60px 60px",
-            }}
-          />
-        </div>
-
-        <div className="container relative z-10 py-20 px-12 mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <motion.div 
-              initial={{ opacity: 0, x: -50 }} 
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8 lg:pl-4 xl:pl-8"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 backdrop-blur-sm px-4 py-2 text-sm font-semibold">
-                  🔥 Trending Now
-                </Badge>
-              </motion.div>
-
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tight"
-              >
-                <span className="text-white">Experience</span>
-                <br />
-                <span className="text-gradient-neon">Live Events</span>
-                <br />
-                <span className="text-white">Like Never Before</span>
-              </motion.h1>
-
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed"
-              >
-                Secure, transparent ticketing powered by Web3 blockchain. 
-                <span className="text-white font-semibold"> No scalpers, no hidden fees</span>, 
-                just authentic experiences.
-              </motion.p>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex flex-col sm:flex-row gap-4 pt-4"
-              >
-                <Button
-                  size="lg"
-                  className="gradient-purple-cyan hover:opacity-90 border-0 text-white text-lg h-16 px-10 rounded-full neon-glow font-bold shadow-2xl"
-                >
-                  Explore Events
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="glass-card hover:bg-white/10 border-white/20 text-white text-lg h-16 px-10 rounded-full font-bold bg-transparent"
-                >
-                  How It Works
-                </Button>
-              </motion.div>
-
-              {/* Stats */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="flex gap-8 pt-8 border-t border-white/10"
-              >
-                <div>
-                  <p className="text-3xl font-bold text-white">50K+</p>
-                  <p className="text-sm text-gray-400">Active Users</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-white">1000+</p>
-                  <p className="text-sm text-gray-400">Events Hosted</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-white">99.9%</p>
-                  <p className="text-sm text-gray-400">Secure Tickets</p>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            {/* Right Visual */}
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+      {/* Hero Section - Event Carousel */}
+      <section className="relative h-[70vh] min-h-[500px] max-h-[700px] overflow-hidden">
+        {/* Carousel Slides */}
+        <AnimatePresence mode="wait">
+          {featuredEvents.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="hidden lg:block relative lg:pr-4 xl:pr-8"
+              key={currentSlide}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
             >
-              <div className="relative">
-                {/* Featured Event Cards Stack */}
-                <div className="relative h-[600px]">
-                  {filteredEvents.slice(0, 3).map((event, idx) => (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, y: 50, rotate: -5 }}
-                      animate={{ 
-                        opacity: 1, 
-                        y: idx * 40, 
-                        rotate: idx * 3 - 3,
-                        x: idx * 20
-                      }}
-                      transition={{ delay: 0.5 + idx * 0.2 }}
-                      className="absolute top-0 left-0 w-full"
-                      style={{ zIndex: 3 - idx }}
-                    >
-                      <div className="glass-card rounded-2xl overflow-hidden border border-white/20 shadow-2xl hover:scale-105 transition-transform duration-300">
-                        <img 
-                          src={event.image || "/placeholder.svg"} 
-                          alt={event.title}
-                          className="w-full h-64 object-cover"
-                        />
-                        <div className="p-6 bg-gradient-to-t from-black/80 to-transparent">
-                          <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
-                          <p className="text-gray-300 text-sm">{event.city} • {new Date(event.date).toLocaleDateString()}</p>
-                        </div>
+              {/* Background Image */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${getEventImage(featuredEvents[currentSlide])})` }}
+              />
+              
+              {/* Gradient Overlays */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+
+              {/* Content */}
+              <div className="absolute inset-0 flex items-center">
+                <div className="container px-12 mx-auto max-w-7xl">
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="max-w-2xl space-y-6"
+                  >
+                    {/* Category Badge */}
+                    <span className="inline-block px-4 py-1.5 bg-purple-500/80 text-white text-sm font-semibold rounded-full">
+                      {featuredEvents[currentSlide].category || 'Featured'}
+                    </span>
+
+                    {/* Title */}
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight">
+                      {featuredEvents[currentSlide].title}
+                    </h1>
+
+                    {/* Event Info */}
+                    <div className="flex flex-wrap items-center gap-4 text-gray-300">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-purple-400" />
+                        <span>{new Date(featuredEvents[currentSlide].date).toLocaleDateString('en-IN', { 
+                          weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' 
+                        })}</span>
                       </div>
-                    </motion.div>
-                  ))}
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-purple-400" />
+                        <span>{featuredEvents[currentSlide].city || 'Venue TBA'}</span>
+                      </div>
+                    </div>
+
+                    {/* Price & CTA */}
+                    <div className="flex items-center gap-4 pt-4">
+                      <Link href={`/event/${featuredEvents[currentSlide].id}`}>
+                        <Button
+                          size="lg"
+                          className="gradient-purple-cyan hover:opacity-90 border-0 text-white text-lg h-14 px-8 rounded-full font-bold shadow-xl"
+                        >
+                          Book Now
+                          <ChevronRight className="ml-2 h-5 w-5" />
+                        </Button>
+                      </Link>
+                      <div className="text-white">
+                        <p className="text-sm text-gray-400">Starting from</p>
+                        <p className="text-2xl font-bold">₹{featuredEvents[currentSlide].price?.toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background">
+            <div className="text-gray-400">Loading events...</div>
           </div>
-        </div>
-      </section>
+        )}
 
-
-
-      {/* Explore Categories */}
-      <section className="container py-20 px-12 mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-4xl md:text-5xl font-black text-white">
-            Explore <span className="text-gradient-neon">Live</span>
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          {categories.map((category, idx) => (
-            <motion.div
-              key={category.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
+        {/* Navigation Arrows */}
+        {featuredEvents.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors z-10"
             >
-              <CategoryCard {...category} />
-            </motion.div>
-          ))}
-        </div>
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors z-10"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+
+        {/* Dots Indicator */}
+        {featuredEvents.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {featuredEvents.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentSlide 
+                    ? 'bg-purple-500 w-8' 
+                    : 'bg-white/40 hover:bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Integrated Artist Hub */}
-      <IntegratedArtistHub />
+
+
+
 
       <section className="container py-20 px-12 mx-auto max-w-7xl space-y-16">
         {loading ? (
@@ -251,34 +228,47 @@ export default function HomePage() {
           <div className="text-center py-12 text-gray-400">No events found</div>
         ) : (
           <>
-            {/* Featured Collections - Large Cards */}
+            {/* All Events - First */}
             <EnhancedEventCarousel
-              title="Featured Collections"
-              subtitle="This week's curated premium experiences"
-              events={filteredEvents.slice(0, 6)}
-              variant="large"
+              title="All Events"
+              subtitle="Browse all available events"
+              events={filteredEvents}
+              variant="default"
             />
 
-            {/* Dynamic Category Sections */}
-            {uniqueCategories.map((category, index) => {
-              // Use small cards only for Sports and Music/Concert events
-              const useSmallCards = category.toLowerCase() === 'sports' || 
-                                   category.toLowerCase() === 'music' || 
-                                   category.toLowerCase() === 'concert'
-              
-              return (
+            {/* Comedy Events - Second */}
+            <EnhancedEventCarousel
+              title="Comedy Events"
+              subtitle="Best comedy experiences"
+              events={filteredEvents}
+              variant="default"
+              categoryFilter="Comedy"
+            />
+          </>
+        )}
+      </section>
+
+      {/* Integrated Artist Hub - Third */}
+      <IntegratedArtistHub />
+
+      <section className="container py-20 px-12 mx-auto max-w-7xl space-y-16">
+        {!loading && filteredEvents.length > 0 && (
+          <>
+            {/* Other Category Sections */}
+            {uniqueCategories
+              .filter(category => category.toLowerCase() !== 'comedy')
+              .map((category) => (
                 <EnhancedEventCarousel
                   key={category}
                   title={`${category} Events`}
                   subtitle={`Best ${category.toLowerCase()} experiences`}
                   events={filteredEvents}
-                  variant={useSmallCards ? "compact" : "large"}
+                  variant="default"
                   categoryFilter={category}
                 />
-              )
-            })}
+              ))}
 
-            {/* Trending Now - Trending Cards */}
+            {/* Trending Now */}
             {filteredEvents.length > 8 && (
               <EnhancedEventCarousel
                 title="Trending Now"
@@ -287,14 +277,6 @@ export default function HomePage() {
                 variant="trending"
               />
             )}
-
-            {/* All Events - Default Cards */}
-            <EnhancedEventCarousel
-              title="All Events"
-              subtitle="Browse all available events"
-              events={filteredEvents}
-              variant="default"
-            />
           </>
         )}
       </section>

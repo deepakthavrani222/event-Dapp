@@ -197,7 +197,12 @@ export async function GET(request: NextRequest) {
           description: event.description,
           category: event.category,
           venue: event.venue,
-          startDate: event.startDate,
+          city: event.city,
+          location: event.location,
+          image: event.image,
+          date: event.date,
+          time: event.time,
+          startDate: event.startDate || event.date,
           endDate: event.endDate,
           status: event.status,
           ticketTypes: ticketTypes.map(tt => ({

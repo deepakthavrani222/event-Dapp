@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRole, type UserRole } from "@/hooks/use-role"
 import { useAuth } from "@/lib/context/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -27,8 +28,24 @@ const ROLES: { value: UserRole; label: string }[] = [
 export function RoleSwitcher() {
   const { role, switchRole, user } = useRole()
   const { logout } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const currentRoleLabel = ROLES.find((r) => r.value === role)?.label || "Guest"
+
+  // Prevent hydration mismatch by showing consistent content on server and initial client render
+  if (!mounted) {
+    return (
+      <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+        <User className="h-4 w-4" />
+        <span className="hidden md:inline">Loading...</span>
+        <ChevronDown className="h-4 w-4" />
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>

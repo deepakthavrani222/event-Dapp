@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { ImageUpload } from '@/components/ui/image-upload';
 import { 
   User, 
   Building, 
@@ -225,25 +224,48 @@ export default function OrganizerOnboardingPage() {
                   <div className="flex justify-center">
                     <div className="relative">
                       {profileImage ? (
-                        <img 
-                          src={profileImage} 
-                          alt="Profile" 
-                          className="w-24 h-24 rounded-full object-cover border-4 border-purple-500/30"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 rounded-full bg-purple-500/20 flex items-center justify-center border-4 border-purple-500/30">
-                          <User className="h-10 w-10 text-purple-400" />
+                        <div className="relative">
+                          <img 
+                            src={profileImage} 
+                            alt="Profile" 
+                            className="w-24 h-24 rounded-full object-cover border-4 border-purple-500/30"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setProfileImage('')}
+                            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
                         </div>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <div className="w-24 h-24 rounded-full bg-purple-500/20 flex items-center justify-center border-4 border-purple-500/30 hover:bg-purple-500/30 transition-colors">
+                            <User className="h-10 w-10 text-purple-400" />
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const response = await apiClient.uploadImage(file, 'avatar');
+                                  if (response.success && response.data?.url) {
+                                    setProfileImage(response.data.url);
+                                  }
+                                } catch (error) {
+                                  // Fallback to local preview
+                                  const previewUrl = URL.createObjectURL(file);
+                                  setProfileImage(previewUrl);
+                                }
+                              }
+                            }}
+                          />
+                          <p className="text-xs text-gray-400 text-center mt-2">Click to upload</p>
+                        </label>
                       )}
-                      <div className="absolute -bottom-2 -right-2">
-                        <ImageUpload
-                          value={profileImage}
-                          onChange={(url) => setProfileImage(url)}
-                          onRemove={() => setProfileImage('')}
-                          type="avatar"
-                          className="w-8 h-8"
-                        />
-                      </div>
                     </div>
                   </div>
 

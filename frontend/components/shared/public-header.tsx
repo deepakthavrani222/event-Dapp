@@ -8,15 +8,16 @@ import { useRole } from "@/hooks/use-role"
 import { useAuth } from "@/lib/context/AuthContext"
 import { useArtistVerification } from "@/hooks/useArtistVerification"
 import { UserSidebar } from "./user-sidebar"
+import { SearchModal } from "./search-modal"
+import { LocationModal } from "./location-modal"
 
-import { Menu, X, MapPin, Search, Wallet } from "lucide-react"
+import { Menu, X, MapPin, Search, ChevronDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const guestNavItems = [
   { label: "For you", href: "/" },
   { label: "Events", href: "/events", active: true },
   { label: "Artists", href: "/artists" },
-  { label: "Activities", href: "/activities" },
 ]
 
 const buyerNavItems = [
@@ -29,6 +30,9 @@ const buyerNavItems = [
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [locationOpen, setLocationOpen] = useState(false)
+  const [selectedCity, setSelectedCity] = useState("Bengaluru")
   const { user, isGuest } = useRole()
   const { user: authUser } = useAuth()
   const { openVerificationFlow } = useArtistVerification()
@@ -38,21 +42,31 @@ export function PublicHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 glass-card border-b border-white/10">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="text-2xl font-black text-gradient-neon">TicketChain</div>
-        </Link>
+      <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-white/10 bg-background/80 backdrop-blur-xl">
+      <div className="container flex h-16 items-center">
+        {/* Left Section: Logo + Divider + Location */}
+        <div className="flex items-center gap-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center">
+            <div className="text-2xl font-black text-gradient-neon">TicketChain</div>
+          </Link>
 
-        {/* Location */}
-        <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full glass-card hover:bg-white/10 transition-colors border border-white/10">
-          <MapPin className="h-4 w-4 text-cyan-400" />
-          <span className="font-semibold text-white">Bangalore</span>
-        </button>
+          {/* Vertical Divider */}
+          <div className="hidden md:block h-8 w-px bg-white/20" />
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-1">
+          {/* Location */}
+          <button 
+            onClick={() => setLocationOpen(true)}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/20"
+          >
+            <MapPin className="h-4 w-4 text-cyan-400" />
+            <span className="font-medium text-white text-sm">{selectedCity}</span>
+            <ChevronDown className="h-3 w-3 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Center: Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-1 mx-auto">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -68,10 +82,12 @@ export function PublicHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        {/* Right Section */}
+        <div className="flex items-center gap-3 ml-auto lg:ml-0">
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setSearchOpen(true)}
             className="hidden md:flex text-gray-400 hover:text-white hover:bg-white/5"
           >
             <Search className="h-5 w-5" />
@@ -97,16 +113,6 @@ export function PublicHeader() {
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-3">
-              {/* Wallet Address */}
-              {authUser?.walletAddress && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/20 rounded-full">
-                  <Wallet className="h-4 w-4 text-cyan-400" />
-                  <span className="text-sm font-mono text-gray-300">
-                    {authUser.walletAddress.slice(0, 6)}...{authUser.walletAddress.slice(-4)}
-                  </span>
-                </div>
-              )}
-
               {/* User Avatar Button */}
               <Button
                 onClick={() => setSidebarOpen(true)}
@@ -211,6 +217,17 @@ export function PublicHeader() {
 
       {/* User Sidebar - Outside header for proper z-index */}
       <UserSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Search Modal */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Location Modal */}
+      <LocationModal 
+        isOpen={locationOpen} 
+        onClose={() => setLocationOpen(false)} 
+        onSelectCity={setSelectedCity}
+        currentCity={selectedCity}
+      />
     </>
   )
 }

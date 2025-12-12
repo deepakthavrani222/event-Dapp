@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
             id: event._id,
             title: event.title,
             venue: event.venue,
+            city: event.city,
+            image: event.image,
             startDate: event.date, // Fix: use event.date instead of event.startDate
             status: event.status,
           } : null,

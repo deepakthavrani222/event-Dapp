@@ -5,7 +5,6 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { RoleSwitcher } from "./role-switcher"
 import { useRole, type UserRole } from "@/hooks/use-role"
 import {
   Menu,
@@ -33,8 +32,7 @@ interface DashboardHeaderProps {
   role: UserRole
 }
 
-const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon: React.ElementType }>> = {
-  guest: [],
+const roleNavigation: Record<Exclude<UserRole, 'guest'>, Array<{ label: string; href: string; icon: React.ElementType }>> = {
   buyer: [
     { label: "Browse Events", href: "/buyer", icon: Calendar },
     { label: "My Tickets", href: "/buyer/tickets", icon: Ticket },
@@ -68,9 +66,9 @@ const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon
     { label: "Bulk Buy", href: "/reseller/bulk", icon: ShoppingBag },
   ],
   admin: [
-    { label: "Dashboard", href: "/admin", icon: Shield },
-    { label: "Events", href: "/admin/events", icon: Calendar },
-    { label: "Users", href: "/admin/users", icon: Users },
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { label: "Events", href: "/admin?tab=approvals", icon: Calendar },
+    { label: "Users", href: "/admin?tab=users", icon: Users },
   ],
   inspector: [
     { label: "Scanner", href: "/inspector", icon: ScanLine },
@@ -78,8 +76,7 @@ const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon
   ],
 }
 
-const roleTitles: Record<UserRole, string> = {
-  guest: "Guest",
+const roleTitles: Record<Exclude<UserRole, 'guest'>, string> = {
   buyer: "Buyer",
   organizer: "Organizer",
   promoter: "Promoter",
@@ -124,11 +121,6 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
 
         <div className="flex items-center gap-3">
           <NotificationBell />
-          <RoleSwitcher />
-          <Button size="sm" variant="outline" className="hidden md:flex gap-2 bg-transparent">
-            <User className="h-4 w-4" />
-            {user?.name}
-          </Button>
 
           {/* Mobile Menu Button */}
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -158,12 +150,6 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
                   {item.label}
                 </Link>
               ))}
-              <div className="pt-3 border-t border-border/50">
-                <Button size="sm" variant="outline" className="w-full gap-2 bg-transparent">
-                  <User className="h-4 w-4" />
-                  {user?.name}
-                </Button>
-              </div>
             </nav>
           </motion.div>
         )}

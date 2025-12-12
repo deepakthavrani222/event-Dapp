@@ -47,34 +47,24 @@ export function ImageUpload({
 
     setUploading(true);
     try {
-      // For development: Use local preview URL directly
-      // This avoids the "failed to fetch" error when backend is not running
-      const previewUrl = URL.createObjectURL(file);
-      onChange(previewUrl, `local_${Date.now()}`);
-      
-      console.log('Using local preview for development. File:', file.name);
-      
-      // TODO: Uncomment when backend is running
-      /*
-      const token = localStorage.getItem('token');
-      console.log('Upload attempt - Token exists:', !!token);
-      
+      // Try to upload to Cloudinary first
       const response = await apiClient.uploadImage(file, type);
-      if (response.success) {
+      
+      if (response.success && response.data?.url) {
+        console.log('Image uploaded successfully:', response.data.url);
         onChange(response.data.url, response.data.publicId);
       } else {
         throw new Error(response.error || 'Upload failed');
       }
-      */
-      
     } catch (error: any) {
       console.error('Upload error:', error);
       
-      // Fallback to local preview even on error
+      // Fallback to local preview if upload fails
       try {
         const previewUrl = URL.createObjectURL(file);
         onChange(previewUrl, `local_${Date.now()}`);
         console.log('Fallback: Using local preview due to upload error');
+        alert('Image upload to server failed. Using local preview - image may not persist after page reload.');
       } catch (fallbackError) {
         alert('Failed to process image file');
       }

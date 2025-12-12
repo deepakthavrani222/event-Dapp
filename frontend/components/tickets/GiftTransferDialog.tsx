@@ -301,22 +301,25 @@ export function GiftTransferDialog({ ticket, onClose, onSuccess }: GiftTransferD
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="glass-card border-border/50 backdrop-blur-xl bg-card/90 rounded-2xl p-6 w-full max-w-md"
+        className="relative glass-card border-border/50 backdrop-blur-xl bg-card/90 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
       >
-        {step === 'details' && renderDetailsStep()}
-        {step === 'confirm' && renderConfirmStep()}
-        {step === 'success' && renderSuccessStep()}
-
         {/* Close Button */}
         {step !== 'success' && (
           <Button
             variant="ghost"
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            className="absolute top-3 right-3 z-10 text-gray-400 hover:text-white h-8 w-8 p-0"
           >
             ✕
           </Button>
         )}
+        
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto p-6 flex-1">
+          {step === 'details' && renderDetailsStep()}
+          {step === 'confirm' && renderConfirmStep()}
+          {step === 'success' && renderSuccessStep()}
+        </div>
       </motion.div>
     </div>
   );

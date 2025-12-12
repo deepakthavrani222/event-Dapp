@@ -1,102 +1,126 @@
 "use client"
-import { motion } from "framer-motion"
-import { useState } from "react"
-import { Verified, TrendingUp } from "lucide-react"
+import { MapPin } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import type { Event } from "@/lib/types"
 
 interface OpenSeaEventCardProps {
   event: Event
+  compact?: boolean
 }
 
-export function OpenSeaEventCard({ event }: OpenSeaEventCardProps) {
-  const [isHovered, setIsHovered] = useState(false)
-
+export function OpenSeaEventCard({ event, compact = false }: OpenSeaEventCardProps) {
   const isSoldOut = event.availableTickets === 0
-  const soldPercentage = ((event.totalTickets - event.availableTickets) / event.totalTickets) * 100
 
-  // Calculate price change percentage
-  const priceChange = Math.random() > 0.5 ? Math.random() * 10 : -Math.random() * 10
+  // Get varied default image based on event title
+  const getDefaultImage = () => {
+    const allImages = [
+      '/concert-stage-purple-lights.jpg',
+      '/comedy-show-stage-spotlight.jpg',
+      '/cricket-stadium-floodlights.jpg',
+      '/theater-stage-dramatic-lighting.jpg',
+      '/music-festival-crowd-stage.jpg',
+      '/tech-conference-stage-futuristic.jpg',
+      '/edm-festival-beach-sunset.jpg',
+      '/amusement-park-colorful.jpg',
+      '/indie-music-festival-outdoor.jpg',
+      '/coldplay-concert-colorful-lights.jpg',
+      '/sufi-concert-intimate-venue.jpg'
+    ]
+    
+    // Use event title hash to get consistent but varied images
+    const hash = event.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    return allImages[hash % allImages.length]
+  }
+
+  // Check if image is valid (not blob URL, not placeholder, and exists)
+  const isValidImage = () => {
+    if (!event.image) return false
+    if (event.image === '/placeholder.svg') return false
+    if (event.image.startsWith('blob:')) return false
+    if (event.image.includes('cloudinary.com')) return true
+    if (event.image.includes('unsplash.com')) return true
+    if (event.image.startsWith('https://') || event.image.startsWith('http://')) return true
+    if (event.image.startsWith('/') && !event.image.includes('placeholder')) return true
+    return false
+  }
+
+  const imageUrl = isValidImage() ? event.image : getDefaultImage()
+
+  // Format date and time
+  const formatDateTime = () => {
+    const date = new Date(event.date)
+    const day = date.toLocaleDateString('en-IN', { weekday: 'short' })
+    const dayNum = date.getDate()
+    const month = date.toLocaleDateString('en-IN', { month: 'short' })
+    const time = event.time || date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+    return `${day}, ${dayNum} ${month}, ${time}`
+  }
 
   return (
     <Link href={`/event/${event.id}`}>
-      <motion.div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        whileHover={{ y: -4 }}
-        className="relative overflow-hidden rounded-xl bg-[#1F1F1F] border border-white/5 hover:border-white/20 transition-all duration-300 cursor-pointer group"
+      <div
+        className={`relative rounded-xl bg-white border border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden ${compact ? 'w-56' : 'w-72'} hover:-translate-y-1`}
       >
-        {/* Compact landscape image section 3:2 ratio */}
-        <div className="relative aspect-[3/2] overflow-hidden bg-gradient-to-br from-purple-500/10 to-cyan-500/10">
-          <Image
-            src={event.image || "/placeholder.svg"}
+        {/* Image section - clean without overlay text */}
+        <div className={`relative bg-gray-100 ${compact ? 'aspect-[4/5]' : 'aspect-[4/5]'}`}>
+          <img
+            src={imageUrl}
             alt={event.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/concert-stage-purple-lights.jpg';
+            }}
           />
 
-          {/* Dark gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-          {/* Compact status badge top-left */}
+          {/* Status badge top-left */}
           {event.isLive && (
-            <div className="absolute top-2 left-2">
-              <div className="px-2.5 py-1 rounded-md bg-green-500 text-white text-[10px] font-bold flex items-center gap-1 shadow-lg">
-                <span className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                MINTING NOW
+            <div className="absolute top-3 left-3">
+              <div className={`rounded bg-green-500 text-white font-semibold flex items-center gap-1.5 shadow ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}>
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                LIVE
               </div>
             </div>
           )}
           {isSoldOut && (
-            <div className="absolute top-2 left-2">
-              <div className="px-2.5 py-1 rounded-md bg-gray-600 text-white text-[10px] font-bold">SOLD OUT</div>
+            <div className="absolute top-3 left-3">
+              <div className={`rounded bg-gray-700 text-white font-semibold ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}>SOLD OUT</div>
             </div>
           )}
+        </div>
 
-          {/* Trending indicator top-right */}
-          {event.trending && (
-            <div className="absolute top-2 right-2">
-              <div className="p-1.5 rounded-md bg-purple-500 shadow-lg">
-                <TrendingUp className="w-3 h-3 text-white" />
-              </div>
-            </div>
+        {/* Content section - white/light background */}
+        <div className={`bg-white ${compact ? 'p-3 space-y-1.5' : 'p-4 space-y-2'}`}>
+          {/* Date and Time - colored text */}
+          <p className={`font-medium text-red-500 ${compact ? 'text-xs' : 'text-sm'}`}>
+            {formatDateTime()}
+          </p>
+
+          {/* Event Title - dark and bold */}
+          <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 ${compact ? 'text-sm min-h-[2rem]' : 'text-base min-h-[2.5rem]'}`}>
+            {event.title}
+          </h3>
+
+          {/* Location */}
+          <div className="flex items-center gap-1.5 text-gray-500">
+            <MapPin className={`flex-shrink-0 ${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
+            <p className={`line-clamp-1 ${compact ? 'text-xs' : 'text-sm'}`}>
+              {typeof event.venue === 'object' && event.venue?.name 
+                ? `${event.venue.name}${event.venue.city ? `, ${event.venue.city}` : ''}`
+                : typeof event.venue === 'string' 
+                  ? event.venue 
+                  : event.city || 'Venue TBA'}
+            </p>
+          </div>
+
+          {/* Price - only show for non-compact cards */}
+          {!compact && (
+            <p className="text-sm text-gray-600 pt-1">
+              ₹{event.price.toLocaleString("en-IN")} onwards
+            </p>
           )}
-
-          {/* Bottom overlay with title and verification */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-white text-sm leading-tight line-clamp-1 flex-1">{event.title}</h3>
-              <Verified className="w-4 h-4 text-cyan-400 shrink-0" fill="currentColor" />
-            </div>
-          </div>
         </div>
-
-        {/* Minimal info section */}
-        <div className="p-3 space-y-2">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Floor price</p>
-              <p className="text-sm font-bold text-white">₹{event.price.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="text-right">
-              <p className={`text-xs font-semibold ${priceChange >= 0 ? "text-green-400" : "text-red-400"}`}>
-                {priceChange >= 0 ? "+" : ""}
-                {priceChange.toFixed(1)}%
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Subtle hover glow effect */}
-        {isHovered && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 pointer-events-none"
-          />
-        )}
-      </motion.div>
+      </div>
     </Link>
   )
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Footer } from '@/components/shared/footer';
@@ -9,10 +9,18 @@ import { Footer } from '@/components/shared/footer';
 export default function LoginPage() {
   const { isAuthenticated, user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      // Redirect based on role
+      // Check for redirect URL first
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+        router.push(decodeURIComponent(redirectUrl));
+        return;
+      }
+
+      // Otherwise redirect based on role
       const roleRoutes: Record<string, string> = {
         BUYER: '/buyer',
         ORGANIZER: '/organizer',
@@ -27,7 +35,7 @@ export default function LoginPage() {
       const route = roleRoutes[user.role] || '/buyer';
       router.push(route);
     }
-  }, [isAuthenticated, user, loading, router]);
+  }, [isAuthenticated, user, loading, router, searchParams]);
 
   if (loading) {
     return (

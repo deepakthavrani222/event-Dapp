@@ -69,6 +69,10 @@ export function EnhancedEventCarousel({
     return null
   }
 
+  // Check if this is a category that should have smaller cards
+  const isSmallCardCategory = categoryFilter && 
+    ['comedy', 'music', 'workshop', 'workshops'].includes(categoryFilter.toLowerCase())
+
   // Render appropriate card component based on variant
   const renderCard = (event: Event, index: number) => {
     const motionProps = {
@@ -104,8 +108,8 @@ export function EnhancedEventCarousel({
         )
       default:
         return (
-          <motion.div key={event.id} {...motionProps} className="flex-shrink-0 w-80">
-            <OpenSeaEventCard event={event} />
+          <motion.div key={event.id} {...motionProps} className="flex-shrink-0">
+            <OpenSeaEventCard event={event} compact={isSmallCardCategory} />
           </motion.div>
         )
     }
@@ -129,7 +133,7 @@ export function EnhancedEventCarousel({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex gap-5 overflow-x-auto scrollbar-hide pb-4"
+          className="flex gap-3 overflow-x-auto scrollbar-hide pb-4"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -173,9 +177,7 @@ export function EnhancedEventCarousel({
           </>
         )}
         
-        {/* Gradient Fade Effects */}
-        <div className="absolute top-0 left-0 w-8 h-full bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
-        <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
+
       </div>
     </div>
   )

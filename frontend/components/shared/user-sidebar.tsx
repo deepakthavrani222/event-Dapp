@@ -107,10 +107,10 @@ export function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gray-900/95 backdrop-blur-xl border-l border-white/20 z-[101] overflow-y-auto shadow-2xl"
+            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gray-900/95 backdrop-blur-xl border-l border-white/20 z-[101] shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Header */}
-            <div className="p-6 border-b border-white/20">
+            {/* Header - Fixed */}
+            <div className="p-6 border-b border-white/20 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">Account</h2>
                 <Button
@@ -153,8 +153,16 @@ export function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
               )}
             </div>
 
-            {/* Menu Items */}
-            <div className="p-6 space-y-2">
+            {/* Menu Items - Scrollable */}
+            <div 
+              className="p-6 space-y-2 flex-1 overflow-y-auto"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <style jsx>{`
+                div::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
               {/* Role-specific items first */}
               {currentRoleItems.map((item) => (
                 <Link key={item.href} href={item.href} onClick={onClose}>
@@ -192,8 +200,8 @@ export function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
               ))}
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-white/20 mt-auto">
+            {/* Footer - Fixed */}
+            <div className="p-6 border-t border-white/20 flex-shrink-0">
               <Button
                 onClick={handleLogout}
                 variant="ghost"
