@@ -29,6 +29,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { toast } from '@/hooks/use-toast';
 
 interface GoldenTicketCreatorProps {
   artistId: string;
@@ -118,7 +119,11 @@ export function GoldenTicketCreator({
 
   const handleCreateTemplate = async () => {
     if (selectedPerks.length === 0) {
-      alert('Please select at least one perk for your Golden Ticket');
+      toast({
+        title: 'Error',
+        description: 'Please select at least one perk for your Golden Ticket',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -143,7 +148,10 @@ export function GoldenTicketCreator({
       const response = await apiClient.createGoldenTicketTemplate(templateData);
       
       if (response.success) {
-        alert('🎉 Golden Ticket Template Created Successfully!\n\nYour premium NFT ticket is now ready. Fans can purchase it for exclusive perks and experiences.');
+        toast({
+          title: '🎉 Golden Ticket Created!',
+          description: 'Your premium NFT ticket is now ready. Fans can purchase it for exclusive perks.',
+        });
         
         // Reset form
         setSelectedPerks([]);
@@ -164,7 +172,11 @@ export function GoldenTicketCreator({
       }
     } catch (error: any) {
       console.error('Failed to create golden ticket template:', error);
-      alert(`Failed to create Golden Ticket template: ${error.message}`);
+      toast({
+        title: 'Error',
+        description: `Failed to create Golden Ticket: ${error.message}`,
+        variant: 'destructive',
+      });
     } finally {
       setCreating(false);
     }

@@ -50,6 +50,7 @@ export const viewport: Viewport = {
 
 import { ClientProviders } from "@/components/providers/ClientProviders";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/lib/context/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -57,14 +58,30 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'light') {
+                    document.documentElement.classList.add('light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className={`font-sans antialiased dark`}>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+      <body className="font-sans antialiased">
+        <ThemeProvider>
+          <ClientProviders>
+            {children}
+          </ClientProviders>
+        </ThemeProvider>
         <Toaster />
         <Analytics />
       </body>

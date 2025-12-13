@@ -28,32 +28,27 @@ export function NotificationSystem() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Mock notification for demo
+  // Listen for real notifications (not mock)
   useEffect(() => {
-    // Simulate receiving an artist approval notification
-    const mockNotification: Notification = {
-      id: '1',
-      type: 'artist_approved',
-      title: 'Welcome to the stage! 🎉',
-      message: 'Congratulations! You are now a verified artist with blue tick status. You can now create Golden Tickets and message your fans directly.',
-      timestamp: new Date(),
-      read: false,
-      data: {
-        royaltyPercentage: 15,
-        canCreateGoldenTickets: true
+    // Check for pending notifications in localStorage
+    const pendingNotification = localStorage.getItem('artist_notification');
+    if (pendingNotification) {
+      try {
+        const notification = JSON.parse(pendingNotification);
+        setNotifications([{
+          ...notification,
+          timestamp: new Date(notification.timestamp)
+        }]);
+        if (notification.type === 'artist_approved') {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000);
+        }
+        // Clear after showing
+        localStorage.removeItem('artist_notification');
+      } catch (e) {
+        console.error('Failed to parse notification:', e);
       }
-    };
-
-    // Show notification after 3 seconds (simulate approval)
-    const timer = setTimeout(() => {
-      setNotifications([mockNotification]);
-      setShowConfetti(true);
-      
-      // Hide confetti after 5 seconds
-      setTimeout(() => setShowConfetti(false), 5000);
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    }
   }, []);
 
   const dismissNotification = (id: string) => {

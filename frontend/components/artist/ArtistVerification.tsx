@@ -19,6 +19,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ArtistVerificationProps {
   artistId: string;
@@ -99,7 +100,11 @@ export function ArtistVerification({
       
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      toast({
+        title: 'Upload Failed',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setUploading(false);
     }
@@ -107,7 +112,11 @@ export function ArtistVerification({
 
   const handleSubmitVerification = async () => {
     if (!documents.idProof || !documents.artistProof) {
-      alert('Please upload both ID proof and artist proof documents');
+      toast({
+        title: 'Missing Documents',
+        description: 'Please upload both ID proof and artist proof documents',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -120,14 +129,26 @@ export function ArtistVerification({
       });
 
       if (response.success) {
+        toast({
+          title: 'Verification Submitted!',
+          description: 'Your documents are under review. This typically takes 24-48 hours.',
+        });
         onVerificationUpdate();
         fetchVerificationStatus();
       } else {
-        alert(response.error || 'Failed to submit verification');
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to submit verification',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Verification submission failed:', error);
-      alert('Failed to submit verification');
+      toast({
+        title: 'Error',
+        description: 'Failed to submit verification',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

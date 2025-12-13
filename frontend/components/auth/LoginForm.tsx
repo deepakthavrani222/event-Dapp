@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,8 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,60 +58,78 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md glass-card border-white/20 bg-background/95 backdrop-blur-xl">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-gradient-neon">Welcome to TicketChain</CardTitle>
-        <CardDescription className="text-gray-400">
+    <Card className={`w-full max-w-md rounded-2xl transition-all duration-300 ${
+      isDark 
+        ? 'glass-card border-white/20 bg-background/95 backdrop-blur-xl' 
+        : 'bg-white border border-gray-200 shadow-xl'
+    }`}>
+      <CardHeader className="text-center pb-2">
+        <CardTitle className={`text-2xl font-bold ${isDark ? 'text-gradient-neon' : 'text-purple-600'}`}>
+          Welcome to TicketChain
+        </CardTitle>
+        <CardDescription className={isDark ? 'text-gray-400' : 'text-gray-500'}>
           Enter your email to access your Web3 wallet
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Email</Label>
+            <Label htmlFor="email" className={`font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+              className={`h-12 rounded-lg transition-all ${
+                isDark 
+                  ? 'bg-white/5 border-white/20 text-white placeholder:text-gray-400' 
+                  : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500'
+              }`}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">Name (optional)</Label>
+            <Label htmlFor="name" className={`font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Name (optional)</Label>
             <Input
               id="name"
               type="text"
               placeholder="Your Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+              className={`h-12 rounded-lg transition-all ${
+                isDark 
+                  ? 'bg-white/5 border-white/20 text-white placeholder:text-gray-400' 
+                  : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500'
+              }`}
             />
           </div>
 
           {error && (
-            <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
+            <div className={`text-sm p-3 rounded-lg ${
+              isDark 
+                ? 'text-red-400 bg-red-500/10 border border-red-500/20' 
+                : 'text-red-600 bg-red-50 border border-red-200'
+            }`}>
               {error}
             </div>
           )}
 
           <Button 
             type="submit" 
-            className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white h-12 font-semibold neon-glow" 
+            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 border-0 text-white h-12 font-semibold rounded-lg shadow-lg shadow-purple-500/30 transition-all" 
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Sign In'}
           </Button>
 
-          <div className="space-y-2">
-            <p className="text-xs text-gray-400 text-center">
+          <div className="space-y-2 pt-2">
+            <p className={`text-xs text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               🔐 A secure crypto wallet will be created for you automatically
             </p>
-            <p className="text-xs text-gray-400 text-center">
+            <p className={`text-xs text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               Your role will be automatically assigned based on your email address
             </p>
           </div>

@@ -10,21 +10,35 @@ import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
  * @title TicketNFT
- * @dev ERC-1155 NFT contract for event tickets with royalty support
+ * @dev ERC-1155 NFT contract for event tickets with ETH payment support
  * Each token ID represents a different ticket type for an event
+ * Users pay ETH directly via MetaMask to mint tickets
  */
 contract TicketNFT is ERC1155, ERC1155Supply, AccessControl, Pausable, ReentrancyGuard, IERC2981 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant PRICE_MANAGER_ROLE = keccak256("PRICE_MANAGER_ROLE");
     
     string public name = "TicketChain NFT";
     string public symbol = "TICKET";
+    
+    // Platform wallet to receive payments
+    address payable public platformWallet;
     
     // Token ID => Token URI
     mapping(uint256 => string) private _tokenURIs;
     
     // Token ID => Max Supply
     mapping(uint256 => uint256) private _maxSupply;
+    
+    // Token ID => Price in Wei
+    mapping(uint256 => uint256) private _tokenPrices;
+    
+    // Token ID => Organizer address (receives portion of payment)
+    mapping(uint256 => address payable) private _tokenOrganizers;
+    
+    // Platform fee percentage (basis points, e.g., 500 = 5%)
+    uint256 public platformFeePercent = 500;
     
     // Token ID => Royalty Info
     struct RoyaltyInfo {
@@ -33,16 +47,27 @@ contract TicketNFT is ERC1155, ERC1155Supply, AccessControl, Pausable, Reentranc
     }
     mapping(uint256 => RoyaltyInfo) private _royalties;
     
+    // Events for ETH payments
+    event TicketPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount, uint256 totalPaid);
+    event PlatformWalletUpdated(address indexed oldWallet, address indexed newWallet);
+    event PlatformFeeUpdated(uint256 oldFee, uint256 newFee);
+    event TokenPriceSet(uint256 indexed tokenId, uint256 price);
+    event FundsWithdrawn(address indexed to, uint256 amount);
+    
     // Events
     event TokenCreated(uint256 indexed tokenId, uint256 maxSupply, string uri);
     event RoyaltySet(uint256 indexed tokenId, address receiver, uint96 royaltyFraction);
     event TicketMinted(address indexed to, uint256 indexed tokenId, uint256 amount);
     event TicketBurned(address indexed from, uint256 indexed tokenId, uint256 amount);
     
-    constructor(string memory uri_) ERC1155(uri_) {
+    constructor(string memory uri_, address payable _platformWallet) ERC1155(uri_) {
+        require(_platformWallet != address(0), "Invalid platform wallet");
+        platformWallet = _platformWallet;
+        
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(PRICE_MANAGER_ROLE, msg.sender);
     }
     
     /**

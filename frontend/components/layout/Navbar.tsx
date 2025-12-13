@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Wallet } from 'lucide-react';
+import { WalletButton } from '@/components/web3/WalletButton';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -24,6 +25,9 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          {/* MetaMask Wallet Connection */}
+          <WalletButton />
+          
           {isAuthenticated && user ? (
             <>
               <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">

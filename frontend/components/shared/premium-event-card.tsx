@@ -146,7 +146,7 @@ export function PremiumEventCard({
         <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
 
         {/* Glass card container */}
-        <div className="relative h-full rounded-3xl bg-black/40 backdrop-blur-3xl border border-white/10 overflow-hidden">
+        <div className="relative h-full rounded-3xl bg-[#161616] backdrop-blur-xl border border-[#333333] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           {/* Holographic shine sweep */}
           <div
             ref={shineRef}
@@ -161,7 +161,7 @@ export function PremiumEventCard({
               alt={title}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a12] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
 
             {/* HOT badge with pulsing animation */}
             {isHot && (
@@ -203,12 +203,12 @@ export function PremiumEventCard({
           {/* Content section */}
           <div className="p-5 space-y-3">
             {/* Title */}
-            <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 transition-all duration-300">
+            <h3 className="text-xl font-bold text-[#FFFFFF] line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#A78BFA] group-hover:to-[#C084FC] transition-all duration-300">
               {title}
             </h3>
 
             {/* Info row */}
-            <div className="flex items-center gap-4 text-sm text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-[#B0B0B0]">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
                 <span>{date}</span>
@@ -222,8 +222,8 @@ export function PremiumEventCard({
             {/* Price and CTA */}
             <div className="flex items-center justify-between pt-2">
               <div>
-                <div className="text-xs text-gray-400 mb-0.5">Starting from</div>
-                <div className="text-xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">
+                <div className="text-xs text-[#B0B0B0] mb-0.5">Starting from</div>
+                <div className="text-xl font-bold text-[#A78BFA]">
                   {price}
                 </div>
               </div>

@@ -4,12 +4,27 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { Footer } from '@/components/shared/footer';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 export default function LoginPage() {
   const { isAuthenticated, user, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  // Hide header on login page
+  useEffect(() => {
+    const header = document.querySelector('header');
+    if (header) {
+      header.style.display = 'none';
+    }
+    return () => {
+      if (header) {
+        header.style.display = '';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
@@ -39,21 +54,20 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+          <p className={`mt-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className={`min-h-screen ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
       <div className="min-h-screen flex items-center justify-center p-4">
         <LoginForm />
       </div>
-      <Footer />
     </div>
   );
 }

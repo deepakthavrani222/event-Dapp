@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
+import { PublicHeader } from '@/components/shared/public-header';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 interface Artist {
   id: string;
@@ -38,6 +40,8 @@ export default function ArtistsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     fetchArtists();
@@ -236,13 +240,14 @@ export default function ArtistsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-        <div className="container mx-auto px-4 py-8">
+      <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-[#FAFAFA]'}`}>
+        <PublicHeader />
+        <div className="container mx-auto px-4 py-8 pt-24">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-white/10 rounded w-64"></div>
+            <div className={`h-8 rounded w-64 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="h-80 bg-white/10 rounded-xl"></div>
+                <div key={i} className={`h-80 rounded-xl ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}></div>
               ))}
             </div>
           </div>
@@ -252,29 +257,31 @@ export default function ArtistsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border-b border-white/10">
+    <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-[#FAFAFA]'}`}>
+      <PublicHeader />
+      
+      {/* Header Section */}
+      <div className={`border-b pt-16 ${isDark ? 'bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border-white/10' : 'bg-gradient-to-r from-purple-50 to-cyan-50 border-gray-200'}`}>
         <div className="container mx-auto px-4 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center space-y-4"
           >
-            <h1 className="text-4xl md:text-6xl font-bold text-white">
+            <h1 className={`text-4xl md:text-6xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Verified Artists
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className={`text-xl max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               Discover amazing verified artists, follow your favorites, and never miss a show
             </p>
             
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-300">
+            <div className={`flex items-center justify-center gap-6 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-blue-400" />
                 <span>All Verified</span>
               </div>
               <div className="flex items-center gap-2">
-                <Crown className="h-4 w-4 text-yellow-400" />
+                <Crown className="h-4 w-4 text-yellow-500" />
                 <span>Golden Tickets</span>
               </div>
               <div className="flex items-center gap-2">
@@ -295,7 +302,7 @@ export default function ArtistsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search artists..."
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400"
+              className={`pl-10 ${isDark ? 'bg-white/10 border-white/20 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
             />
           </div>
           
@@ -307,8 +314,10 @@ export default function ArtistsPage() {
                 onClick={() => setSelectedGenre(genre)}
                 className={`whitespace-nowrap ${
                   selectedGenre === genre 
-                    ? 'gradient-purple-cyan border-0' 
-                    : 'border-white/20 text-white hover:bg-white/10'
+                    ? 'gradient-purple-cyan border-0 text-white' 
+                    : isDark 
+                      ? 'border-white/20 text-white hover:bg-white/10' 
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 {genre === 'all' ? 'All Genres' : genre}
@@ -324,15 +333,16 @@ export default function ArtistsPage() {
               key={artist.id} 
               artist={artist} 
               onFollow={() => handleFollow(artist.id, artist.slug)}
+              isDark={isDark}
             />
           ))}
         </div>
 
         {filteredArtists.length === 0 && (
           <div className="text-center py-12">
-            <Music className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Artists Found</h3>
-            <p className="text-gray-400">Try adjusting your search or filter criteria</p>
+            <Music className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+            <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No Artists Found</h3>
+            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Try adjusting your search or filter criteria</p>
           </div>
         )}
       </div>
@@ -340,13 +350,17 @@ export default function ArtistsPage() {
   );
 }
 
-function ArtistCard({ artist, onFollow }: { artist: Artist; onFollow: () => void }) {
+function ArtistCard({ artist, onFollow, isDark }: { artist: Artist; onFollow: () => void; isDark: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5 }}
-      className="glass-card border-white/20 bg-white/5 rounded-xl overflow-hidden hover:bg-white/10 transition-all duration-300"
+      className={`rounded-xl overflow-hidden transition-all duration-300 ${
+        isDark 
+          ? 'glass-card border-white/20 bg-white/5 hover:bg-white/10' 
+          : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
+      }`}
     >
       <Link href={`/artist/${artist.slug}`}>
         <div className="relative h-48 overflow-hidden cursor-pointer">
@@ -383,19 +397,29 @@ function ArtistCard({ artist, onFollow }: { artist: Artist; onFollow: () => void
       <CardContent className="p-6 space-y-4">
         <div>
           <Link href={`/artist/${artist.slug}`}>
-            <h3 className="font-bold text-white text-lg mb-2 hover:text-purple-400 transition-colors cursor-pointer">
+            <h3 className={`font-bold text-lg mb-2 transition-colors cursor-pointer ${
+              isDark ? 'text-white hover:text-purple-400' : 'text-gray-900 hover:text-purple-600'
+            }`}>
               {artist.artistName}
             </h3>
           </Link>
           
           <div className="flex flex-wrap gap-1 mb-3">
             {artist.genre.slice(0, 2).map((g) => (
-              <Badge key={g} className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+              <Badge key={g} className={`text-xs ${
+                isDark 
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
+                  : 'bg-purple-100 text-purple-700 border-purple-200'
+              }`}>
                 {g}
               </Badge>
             ))}
             {artist.genre.length > 2 && (
-              <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30 text-xs">
+              <Badge className={`text-xs ${
+                isDark 
+                  ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' 
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              }`}>
                 +{artist.genre.length - 2}
               </Badge>
             )}
@@ -405,16 +429,16 @@ function ArtistCard({ artist, onFollow }: { artist: Artist; onFollow: () => void
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <p className="text-lg font-bold text-white">{artist.fanCount.toLocaleString()}</p>
-            <p className="text-xs text-gray-400">Fans</p>
+            <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{artist.fanCount.toLocaleString()}</p>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Fans</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-white">{artist.totalEvents}</p>
-            <p className="text-xs text-gray-400">Events</p>
+            <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{artist.totalEvents}</p>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Events</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-white">{artist.averageRating}</p>
-            <p className="text-xs text-gray-400">Rating</p>
+            <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{artist.averageRating}</p>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Rating</p>
           </div>
         </div>
 
@@ -434,7 +458,10 @@ function ArtistCard({ artist, onFollow }: { artist: Artist; onFollow: () => void
           <Link href={`/artist/${artist.slug}`}>
             <Button
               variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
+              className={isDark 
+                ? 'border-white/20 text-white hover:bg-white/10' 
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }
             >
               <ExternalLink className="h-4 w-4" />
             </Button>

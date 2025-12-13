@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, CreditCard, Wallet, Smartphone, Check, ArrowRight, Shield, Zap } from "lucide-react"
+import { X, Wallet, Check, ArrowRight, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { apiClient } from '@/lib/api/client'
 import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets'
+import { CryptoPayment } from '@/components/web3/CryptoPayment'
 
 interface EnhancedPurchaseDialogProps {
   selections: any
@@ -21,19 +22,23 @@ interface EnhancedPurchaseDialogProps {
 }
 
 export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSuccess }: EnhancedPurchaseDialogProps) {
-  const [step, setStep] = useState(1) // 1: Review, 2: Payment, 3: Success
-  const [paymentMethod, setPaymentMethod] = useState("card")
+  const [step, setStep] = useState(1) // 1: Review, 2: Payment, 3: Success, 4: Crypto Payment
+  const [paymentMethod, setPaymentMethod] = useState("wallet") // Default to crypto wallet
   const [processing, setProcessing] = useState(false)
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
 
   const paymentMethods = [
-    { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard, Rupay" },
-    { id: "upi", name: "UPI Payment", icon: Smartphone, description: "PhonePe, GPay, Paytm" },
-    { id: "wallet", name: "Crypto Wallet", icon: Wallet, description: "MetaMask, WalletConnect" },
+    { id: "wallet", name: "Pay with ETH (MetaMask)", icon: Wallet, description: "Connect MetaMask & pay with ETH" },
   ]
 
   const handlePurchase = async () => {
+    // If crypto/wallet payment selected, show MetaMask payment UI
+    if (paymentMethod === 'wallet') {
+      setStep(4) // Go to crypto payment step
+      return
+    }
+
     setProcessing(true)
     
     try {
@@ -86,6 +91,52 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
     }
   }
 
+  // Handle successful crypto payment from MetaMask
+  const handleCryptoSuccess = async (txHash: string) => {
+    setProcessing(true)
+    
+    try {
+      // Complete purchase with crypto transaction hash
+      const purchasePromises = selections.selections.map((selection: any) => 
+        apiClient.purchaseTickets({
+          ticketTypeId: selection.ticketTypeId,
+          quantity: selection.quantity,
+          paymentMethod: 'CRYPTO',
+          referralCode: undefined,
+          transactionHash: txHash,
+        })
+      );
+
+      const responses = await Promise.all(purchasePromises);
+      const allSuccessful = responses.every(response => response.success);
+
+      if (!allSuccessful) {
+        const failedResponses = responses.filter(r => !r.success);
+        throw new Error(failedResponses[0]?.error || 'Some purchases failed');
+      }
+
+      console.log('Crypto purchase successful! Refreshing tickets...');
+      
+      // Trigger My Tickets refresh immediately
+      notifyTicketPurchased();
+      window.dispatchEvent(new CustomEvent('refreshTickets'));
+      localStorage.setItem('ticketPurchased', Date.now().toString());
+      
+      setProcessing(false)
+      setStep(3)
+      
+      // Auto close after success
+      setTimeout(() => {
+        onSuccess()
+      }, 3000)
+    } catch (error: any) {
+      console.error('🎫 Crypto Purchase failed:', error);
+      setProcessing(false);
+      setStep(2); // Go back to payment selection
+      alert(`Purchase failed: ${error.message}`);
+    }
+  }
+
   const fees = {
     platform: Math.round(selections.total * 0.02), // 2% platform fee
     payment: Math.round(selections.total * 0.015), // 1.5% payment gateway
@@ -111,6 +162,7 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                   {step === 1 && "Review Your Order"}
                   {step === 2 && "Payment Details"}
                   {step === 3 && "Purchase Successful!"}
+                  {step === 4 && "Pay with MetaMask"}
                 </h2>
                 <p className="text-gray-400">{eventTitle}</p>
               </div>
@@ -126,22 +178,29 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
 
             {/* Progress Steps */}
             <div className="flex items-center gap-4 mt-6">
-              {[1, 2, 3].map((stepNum) => (
-                <div key={stepNum} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    step >= stepNum 
-                      ? 'bg-primary text-white' 
-                      : 'bg-gray-600 text-gray-400'
-                  }`}>
-                    {step > stepNum ? <Check className="h-4 w-4" /> : stepNum}
+              {[1, 2, 3].map((stepNum) => {
+                // Map step 4 (crypto payment) to show as step 3 in progress
+                const currentStep = step === 4 ? 2.5 : step;
+                const isComplete = step === 3 ? stepNum <= 3 : currentStep >= stepNum;
+                const showCheck = step === 3 ? stepNum < 3 : currentStep > stepNum;
+                
+                return (
+                  <div key={stepNum} className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      isComplete 
+                        ? stepNum === 3 && step === 4 ? 'bg-orange-500 text-white animate-pulse' : 'bg-primary text-white'
+                        : 'bg-gray-600 text-gray-400'
+                    }`}>
+                      {showCheck ? <Check className="h-4 w-4" /> : stepNum === 3 && step === 4 ? <Wallet className="h-4 w-4" /> : stepNum}
+                    </div>
+                    {stepNum < 3 && (
+                      <div className={`w-12 h-1 rounded ${
+                        currentStep > stepNum ? 'bg-primary' : 'bg-gray-600'
+                      }`} />
+                    )}
                   </div>
-                  {stepNum < 3 && (
-                    <div className={`w-12 h-1 rounded ${
-                      step > stepNum ? 'bg-primary' : 'bg-gray-600'
-                    }`} />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -368,6 +427,24 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                 <Badge className="bg-primary/20 text-primary border-primary/30 px-4 py-2">
                   Transaction ID: TXN{Date.now().toString().slice(-8)}
                 </Badge>
+              </motion.div>
+            )}
+
+            {/* Step 4: Crypto/MetaMask Payment */}
+            {step === 4 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                <CryptoPayment
+                  amountINR={finalTotal}
+                  eventTitle={eventTitle}
+                  ticketType={selections.selections.map((s: any) => s.name).join(', ')}
+                  quantity={selections.totalTickets}
+                  onSuccess={handleCryptoSuccess}
+                  onCancel={() => setStep(2)}
+                />
               </motion.div>
             )}
           </div>

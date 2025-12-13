@@ -6,6 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRole, type UserRole } from "@/hooks/use-role"
+import { useAuth } from "@/lib/context/AuthContext"
 import {
   Menu,
   X,
@@ -89,7 +90,7 @@ const roleTitles: Record<Exclude<UserRole, 'guest'>, string> = {
 
 export function DashboardHeader({ role }: DashboardHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { user } = useRole()
+  const { user: authUser } = useAuth()
   const navigation = roleNavigation[role] || []
 
   return (
@@ -120,6 +121,24 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* User Info */}
+          <div className="hidden md:flex items-center gap-3">
+            {authUser?.walletAddress && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+                <Wallet className="h-4 w-4 text-purple-400" />
+                <span className="text-sm text-gray-300">
+                  {authUser.walletAddress.slice(0, 6)}...{authUser.walletAddress.slice(-4)}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+              <User className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm text-gray-300">
+                {authUser?.name || authUser?.email?.split('@')[0] || 'Guest User'}
+              </span>
+            </div>
+          </div>
+          
           <NotificationBell />
 
           {/* Mobile Menu Button */}
@@ -139,6 +158,23 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
             className="md:hidden border-t border-border/50 bg-card"
           >
             <nav className="container py-4 space-y-2">
+              {/* User Info in Mobile */}
+              <div className="flex items-center gap-3 py-3 mb-2 border-b border-white/10">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    {authUser?.name || authUser?.email?.split('@')[0] || 'Guest User'}
+                  </p>
+                  {authUser?.walletAddress && (
+                    <p className="text-xs text-gray-400">
+                      {authUser.walletAddress.slice(0, 6)}...{authUser.walletAddress.slice(-4)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
               {navigation.map((item) => (
                 <Link
                   key={item.href}

@@ -84,6 +84,7 @@ export default function CreateEventPage() {
       name: 'General Admission',
       description: 'Standard event access',
       price: 500,
+      priceInput: '500',
       totalSupply: 100,
       maxPerWallet: 4,
       pricingType: 'fixed' as 'fixed' | 'dynamic',
@@ -730,6 +731,7 @@ export default function CreateEventPage() {
                             name: '',
                             description: '',
                             price: 0,
+                            priceInput: '',
                             totalSupply: 0,
                             maxPerWallet: 4,
                             pricingType: 'fixed',
@@ -798,15 +800,20 @@ export default function CreateEventPage() {
                           <div className="space-y-2">
                             <Label className="text-sm text-gray-300">Price (₹) *</Label>
                             <Input
-                              type="number"
-                              value={ticket.price || ''}
+                              type="text"
+                              inputMode="decimal"
+                              value={ticket.priceInput ?? ticket.price ?? ''}
                               onChange={(e) => {
-                                const updated = [...ticketTypes];
-                                updated[index].price = parseInt(e.target.value) || 0;
-                                setTicketTypes(updated);
+                                const val = e.target.value;
+                                // Allow empty, numbers, and decimals only
+                                if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                                  const updated = [...ticketTypes];
+                                  updated[index].priceInput = val;
+                                  updated[index].price = val === '' ? 0 : (parseFloat(val) || 0);
+                                  setTicketTypes(updated);
+                                }
                               }}
-                              placeholder="500"
-                              min="0"
+                              placeholder="Enter any price (e.g., 0.0000000001)"
                               className="bg-white/5 border-white/20 text-white"
                             />
                           </div>

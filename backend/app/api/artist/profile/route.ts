@@ -17,10 +17,12 @@ export async function GET(request: NextRequest) {
     const artist = await Artist.findOne({ userId: authResult.user.id });
     
     if (!artist) {
+      // Return success: false with 200 status so frontend can handle gracefully
       return NextResponse.json({ 
         success: false, 
-        error: 'Artist profile not found' 
-      }, { status: 404 });
+        error: 'Artist profile not found',
+        artist: null
+      });
     }
 
     return NextResponse.json({

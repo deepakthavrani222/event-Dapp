@@ -465,7 +465,10 @@ function StatCard({ icon: Icon, label, value, change, color, alert }: {
   };
 
   return (
-    <motion.div whileHover={{ scale: 1.02 }} className={`p-4 rounded-xl bg-gradient-to-br ${colorClasses[color]} border ${alert ? 'animate-pulse' : ''}`}>
+    <motion.div 
+      whileHover={{ scale: 1.02 }} 
+      className={`p-4 rounded-xl bg-gradient-to-br ${colorClasses[color]} border ${alert ? 'animate-pulse' : ''}`}
+    >
       <div className="flex items-center justify-between mb-2">
         <Icon className={`h-5 w-5 ${iconColors[color]}`} />
         {change !== undefined && (
@@ -484,7 +487,7 @@ function StatCard({ icon: Icon, label, value, change, color, alert }: {
 // Overview Tab - Enhanced with Big Metrics, Quick Actions, and Twitter-like Live Feed
 function OverviewTab({ metrics, activity, dailyRevenue, onNavigate }: { metrics: DashboardMetrics; activity: { type: string; message: string; time: string; amount?: number }[]; dailyRevenue: DailyRevenue[]; onNavigate?: (tab: string) => void }) {
   // Use real activity data from API
-  const [liveUpdates, setLiveUpdates] = useState(activity);
+  const [liveUpdates, setLiveUpdates] = useState<{ type: string; message: string; time: string; amount?: number }[]>(activity);
   
   // Update when activity prop changes
   useEffect(() => {
@@ -1626,6 +1629,10 @@ function ArtistsTab() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedArtists, setSelectedArtists] = useState<string[]>([]);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectingArtistId, setRejectingArtistId] = useState<string | null>(null);
+  const [rejectingBulk, setRejectingBulk] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     fetchArtists();
@@ -1661,62 +1668,31 @@ function ArtistsTab() {
       });
 
       if (response.success) {
+        toast({
+          title: action === 'approve' ? 'Artist Approved!' : 'Artist Rejected',
+          description: action === 'approve' 
+            ? 'The artist has been verified and can now create events.' 
+            : 'The artist verification has been rejected.',
+        });
         fetchArtists(); // Refresh the list
       } else {
-        alert(response.error || 'Failed to process verification');
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to process verification',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Verification error:', error);
-      alert('Failed to process verification');
+      toast({
+        title: 'Error',
+        description: 'Failed to process verification',
+        variant: 'destructive',
+      });
     }
   };
 
-  const mockArtists = [
-    {
-      id: '1',
-      artistName: 'Prateek Kuhad',
-      realName: 'Prateek Singh Kuhad',
-      userName: 'Prateek K',
-      userEmail: 'prateek@example.com',
-      genre: ['Indie', 'Folk'],
-      verificationStatus: 'pending',
-      verificationSubmittedAt: '2024-01-15T10:30:00Z',
-      totalEvents: 0,
-      totalRevenue: 0,
-      fanCount: 0,
-      socialLinks: {
-        instagram: 'https://instagram.com/prateekuhad',
-        spotify: 'https://open.spotify.com/artist/prateek'
-      }
-    },
-    {
-      id: '2',
-      artistName: 'When Chai Met Toast',
-      realName: 'Achyuth Jaigopal',
-      userName: 'WCMT',
-      userEmail: 'wcmt@example.com',
-      genre: ['Indie', 'Pop'],
-      verificationStatus: 'pending',
-      verificationSubmittedAt: '2024-01-14T15:45:00Z',
-      totalEvents: 2,
-      totalRevenue: 125000,
-      fanCount: 450
-    },
-    {
-      id: '3',
-      artistName: 'Nucleya',
-      realName: 'Udyan Sagar',
-      userName: 'Nucleya',
-      userEmail: 'nucleya@example.com',
-      genre: ['Electronic', 'Bass'],
-      verificationStatus: 'verified',
-      verifiedAt: '2024-01-10T12:00:00Z',
-      totalEvents: 8,
-      totalRevenue: 2500000,
-      fanCount: 1200,
-      royaltyPercentage: 20
-    }
-  ];
+  // Use actual artists from API, no mock data
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -1763,10 +1739,10 @@ function ArtistsTab() {
       {/* Status Filter */}
       <div className="flex gap-2">
         {[
-          { value: 'pending', label: 'Pending', count: 3 },
-          { value: 'verified', label: 'Verified', count: 12 },
-          { value: 'rejected', label: 'Rejected', count: 1 },
-          { value: 'all', label: 'All', count: 16 }
+          { value: 'pending', label: 'Pending' },
+          { value: 'verified', label: 'Verified' },
+          { value: 'rejected', label: 'Rejected' },
+          { value: 'all', label: 'All' }
         ].map((filter) => (
           <Button
             key={filter.value}
@@ -1775,16 +1751,24 @@ function ArtistsTab() {
             className={`${statusFilter === filter.value ? 'gradient-purple-cyan border-0' : 'border-white/20'}`}
           >
             {filter.label}
-            <Badge className="ml-2 bg-white/20">{filter.count}</Badge>
           </Button>
         ))}
       </div>
 
       {/* Artists List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        </div>
+      ) : artists.length === 0 ? (
+        <Card className="border-white/20 bg-gray-900/80 p-12 text-center">
+          <Crown className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No artists found</h3>
+          <p className="text-gray-400">No artists with {statusFilter} status</p>
+        </Card>
+      ) : (
       <div className="space-y-4">
-        {mockArtists
-          .filter(artist => statusFilter === 'all' || artist.verificationStatus === statusFilter)
-          .map((artist) => (
+        {artists.map((artist) => (
           <Card key={artist.id} className="glass-card border-white/20 bg-white/5">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
@@ -1794,13 +1778,16 @@ function ArtistsTab() {
                       <Crown className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-white">{artist.artistName}</h3>
-                      <p className="text-gray-400">{artist.realName}</p>
+                      <h3 className="text-lg font-bold text-white">{artist.artistName || 'Unknown Artist'}</h3>
+                      <p className="text-gray-400">{artist.realName || artist.userName || 'Unknown'}</p>
+                      <p className="text-xs text-gray-500">{artist.userEmail}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusBadge(artist.verificationStatus)}
-                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                          {artist.genre.join(', ')}
-                        </Badge>
+                        {artist.genre && (
+                          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                            {typeof artist.genre === 'string' ? artist.genre : (artist.genre?.join?.(', ') || 'Unknown')}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1861,8 +1848,10 @@ function ArtistsTab() {
                       </Button>
                       <Button
                         onClick={() => {
-                          const reason = prompt('Rejection reason:');
-                          if (reason) handleVerifyArtist(artist.id, 'reject', reason);
+                          setRejectingArtistId(artist.id);
+                          setRejectingBulk(false);
+                          setRejectionReason('');
+                          setShowRejectDialog(true);
                         }}
                         variant="outline"
                         className="border-red-500/30 text-red-300 hover:bg-red-500/10"
@@ -1886,6 +1875,7 @@ function ArtistsTab() {
           </Card>
         ))}
       </div>
+      )}
 
       {/* Bulk Actions */}
       {selectedArtists.length > 0 && (
@@ -1910,11 +1900,10 @@ function ArtistsTab() {
                   variant="outline"
                   className="border-red-500/30 text-red-300 hover:bg-red-500/10"
                   onClick={() => {
-                    const reason = prompt('Rejection reason for all selected:');
-                    if (reason) {
-                      selectedArtists.forEach(id => handleVerifyArtist(id, 'reject', reason));
-                      setSelectedArtists([]);
-                    }
+                    setRejectingBulk(true);
+                    setRejectingArtistId(null);
+                    setRejectionReason('');
+                    setShowRejectDialog(true);
                   }}
                 >
                   <XCircle className="h-4 w-4 mr-2" />
@@ -1924,6 +1913,67 @@ function ArtistsTab() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Rejection Dialog */}
+      {showRejectDialog && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-md w-full mx-4"
+          >
+            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-400" />
+              {rejectingBulk ? 'Reject Selected Artists' : 'Reject Artist'}
+            </h3>
+            <p className="text-gray-400 mb-4">
+              {rejectingBulk 
+                ? `You are about to reject ${selectedArtists.length} artist(s). Please provide a reason.`
+                : 'Please provide a reason for rejecting this artist verification.'}
+            </p>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 mb-4"
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowRejectDialog(false)} 
+                className="flex-1 border-white/20"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (rejectionReason.trim()) {
+                    if (rejectingBulk) {
+                      selectedArtists.forEach(id => handleVerifyArtist(id, 'reject', rejectionReason));
+                      setSelectedArtists([]);
+                    } else if (rejectingArtistId) {
+                      handleVerifyArtist(rejectingArtistId, 'reject', rejectionReason);
+                    }
+                    setShowRejectDialog(false);
+                    setRejectionReason('');
+                  } else {
+                    toast({
+                      title: 'Error',
+                      description: 'Please provide a rejection reason',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Confirm Rejection
+              </Button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

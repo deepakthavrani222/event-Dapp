@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api/client';
 import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets';
+import { CryptoPayment } from '@/components/web3/CryptoPayment';
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -21,7 +22,8 @@ import {
   User,
   Ticket,
   Clock,
-  Star
+  Star,
+  Wallet
 } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
 
@@ -40,7 +42,7 @@ export function GuestBuyingFlow({
   onClose, 
   onSuccess 
 }: GuestBuyingFlowProps) {
-  const [step, setStep] = useState<'auth' | 'payment' | 'processing' | 'success'>('auth');
+  const [step, setStep] = useState<'auth' | 'payment' | 'crypto' | 'processing' | 'success'>('auth');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -48,7 +50,7 @@ export function GuestBuyingFlow({
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'wallet'>('upi');
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'wallet' | 'crypto'>('crypto'); // Default to crypto
   const { login } = useAuth();
 
   const handleQuickAuth = async () => {
@@ -81,6 +83,12 @@ export function GuestBuyingFlow({
   };
 
   const handlePayment = async () => {
+    // If crypto payment selected, show MetaMask payment UI
+    if (paymentMethod === 'crypto') {
+      setStep('crypto');
+      return;
+    }
+
     setLoading(true);
     setStep('processing');
     
@@ -137,6 +145,53 @@ export function GuestBuyingFlow({
     } catch (error) {
       console.error('Payment failed:', error);
       setStep('payment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle successful crypto payment from MetaMask
+  const handleCryptoSuccess = async (txHash: string) => {
+    setLoading(true);
+    setStep('processing');
+    
+    try {
+      // Complete purchase with crypto transaction hash
+      const purchasePromises = ticketSelections.map((selection: any) => 
+        apiClient.purchaseTickets({
+          ticketTypeId: selection.ticketTypeId,
+          quantity: selection.quantity,
+          paymentMethod: 'CRYPTO',
+          referralCode: undefined,
+          transactionHash: txHash,
+        })
+      );
+
+      const responses = await Promise.all(purchasePromises);
+      const allSuccessful = responses.every(response => response.success);
+
+      if (allSuccessful) {
+        console.log('Crypto purchase successful! Refreshing tickets...');
+        
+        // Trigger My Tickets refresh immediately
+        notifyTicketPurchased();
+        window.dispatchEvent(new CustomEvent('refreshTickets'));
+        localStorage.setItem('ticketPurchased', Date.now().toString());
+        
+        setStep('success');
+        
+        // Auto-close after showing success
+        setTimeout(() => {
+          onSuccess();
+        }, 3000);
+      } else {
+        const failedResponses = responses.filter(r => !r.success);
+        throw new Error(failedResponses[0]?.error || 'Some purchases failed');
+      }
+    } catch (error: any) {
+      console.error('Crypto purchase failed:', error);
+      setStep('payment');
+      alert(`Purchase failed: ${error.message}`);
     } finally {
       setLoading(false);
     }

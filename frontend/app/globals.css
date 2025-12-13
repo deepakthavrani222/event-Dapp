@@ -1,28 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Dark Mode (Default) */
 :root {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 262.1 83.3% 57.8%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  /* Premium Font Family */
+  --font-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Premium Dark Color Palette */
+  --background: 0 0% 4%; /* #0A0A0A - deep black */
+  --foreground: 0 0% 100%; /* #FFFFFF - pure white */
+  --card: 0 0% 9%; /* #161616 - card background */
+  --card-foreground: 0 0% 100%; /* #FFFFFF */
+  --popover: 0 0% 9%; /* #161616 */
+  --popover-foreground: 0 0% 100%;
+  --primary: 263 70% 75%; /* #A78BFA - soft purple accent */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 12%; /* #1E1E1E */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 12%; /* #1E1E1E */
+  --muted-foreground: 0 0% 69%; /* #B0B0B0 - light gray for secondary text */
+  --accent: 270 76% 75%; /* #C084FC - purple accent */
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 262.1 83.3% 57.8%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 20%; /* #333333 - subtle borders */
+  --input: 0 0% 12%; /* #1E1E1E */
+  --ring: 263 70% 75%; /* #A78BFA */
   --radius: 0.5rem;
+  
+  /* Custom color variables - Dark */
+  --color-page-bg: #0A0A0A;
+  --color-card-bg: #161616;
+  --color-card-bg-alpha: rgba(30, 30, 30, 0.8);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B0B0B0;
+  --color-accent-purple: #A78BFA;
+  --color-accent-purple-bright: #C084FC;
+  --color-border: #333333;
+  --color-header-bg: rgba(10, 10, 10, 0.9);
+}
+
+/* Light Mode - District by Zomato Style */
+.light {
+  --background: 0 0% 98%; /* #FAFAFA - off-white */
+  --foreground: 0 0% 9%; /* #171717 - near black */
+  --card: 0 0% 100%; /* #FFFFFF - pure white */
+  --card-foreground: 0 0% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+  --primary: 350 89% 55%; /* #E23744 - Zomato red (darker) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%; /* #F5F5F5 */
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%; /* #666666 - darker for better contrast */
+  --accent: 350 89% 55%; /* #E23744 */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%; /* #E0E0E0 - slightly darker */
+  --input: 0 0% 96%;
+  --ring: 350 89% 55%;
+  
+  /* Custom color variables - Light (District Style) */
+  --color-page-bg: #FAFAFA;
+  --color-card-bg: #FFFFFF;
+  --color-card-bg-alpha: rgba(255, 255, 255, 0.95);
+  --color-text-primary: #171717;
+  --color-text-secondary: #525252; /* Darker gray for better readability */
+  --color-accent-purple: #7C3AED; /* Vibrant purple for light theme */
+  --color-accent-purple-bright: #8B5CF6;
+  --color-accent-red: #E23744; /* Zomato red */
+  --color-border: #E0E0E0;
+  --color-header-bg: rgba(255, 255, 255, 0.95);
 }
 
 @layer base {
@@ -31,7 +85,19 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-geist-sans), sans-serif;
+    font-family: var(--font-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  
+  p, span, a, button, input, textarea, select {
+    font-family: var(--font-secondary);
   }
 }
 
@@ -60,54 +126,139 @@
 
   /* Neon glow effects for Web3 premium aesthetic */
   .neon-glow {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(168, 85, 247, 0.3);
   }
 
   .neon-glow-hover:hover {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.7), 0 0 60px rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.7), 0 0 60px rgba(168, 85, 247, 0.5);
+  }
+  
+  /* Light theme glow - more subtle */
+  .light .neon-glow {
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25), 0 0 20px rgba(124, 58, 237, 0.15);
+  }
+  
+  .light .neon-glow-hover:hover {
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35), 0 0 30px rgba(124, 58, 237, 0.2);
   }
 
+  /* Glass card with new palette */
   .glass-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(30, 30, 30, 0.8);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #333333;
+  }
+  
+  /* Light theme glass card */
+  .light .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid #E0E0E0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Premium card style */
+  .premium-card {
+    background: #161616;
+    border: 1px solid #333333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  .light .premium-card {
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Image overlay gradient */
+  .image-overlay {
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
   }
 
   .gradient-purple-cyan {
-    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
   }
 
   .gradient-purple-pink {
-    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
   }
 
   .gradient-cyan-emerald {
-    background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+    background: linear-gradient(135deg, #06B6D4 0%, #10B981 100%);
   }
 
   .gradient-yellow-orange {
-    background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+    background: linear-gradient(135deg, #FBBF24 0%, #F97316 100%);
   }
 
   .gradient-blue-purple {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
   }
 
   .text-gradient-neon {
-    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Light theme specific gradients */
+  .light .gradient-purple-cyan {
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+  }
+  
+  .light .text-gradient-neon {
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
+  /* Text colors */
+  .text-primary-white {
+    color: #FFFFFF;
+  }
+
+  .text-secondary-gray {
+    color: #B0B0B0;
+  }
+
+  .text-accent-purple {
+    color: #8B5CF6;
+  }
+  
+  .light .text-accent-purple {
+    color: #7C3AED;
+  }
+
   .soft-shadow-dark {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Light theme card shadow */
+  .light .soft-shadow-dark {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
 
   .border-gradient {
     border: 2px solid transparent;
-    background-image: linear-gradient(#0f0f1a, #0f0f1a), linear-gradient(135deg, #8b5cf6, #06b6d4);
+    background-image: linear-gradient(#0A0A0A, #0A0A0A), linear-gradient(135deg, #A78BFA, #C084FC);
     background-origin: border-box;
     background-clip: padding-box, border-box;
+  }
+
+  /* Page background */
+  .bg-page {
+    background-color: #0A0A0A;
+  }
+
+  /* Card backgrounds */
+  .bg-card-dark {
+    background-color: #161616;
+  }
+
+  .bg-card-alpha {
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(12px);
   }
 }

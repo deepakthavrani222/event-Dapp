@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Users, Star } from "lucide-react"
 import Link from "next/link"
 import type { Event } from "@/lib/types"
+import { useTheme } from "@/lib/context/ThemeContext"
 
 // Helper function to get varied default images
 const getVariedDefaultImage = (title: string) => {
@@ -40,6 +41,8 @@ const isValidImageUrl = (image: string | undefined) => {
 
 // Large Featured Card (like District.io hero cards)
 export function LargeFeaturedCard({ event }: { event: Event }) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const imageUrl = isValidImageUrl(event.image) 
     ? event.image 
     : getVariedDefaultImage(event.title)
@@ -50,7 +53,11 @@ export function LargeFeaturedCard({ event }: { event: Event }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer bg-[#1F1F1F] border border-white/5 hover:border-white/20 transition-all duration-300"
+        className={`flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 ${
+          isDark 
+            ? 'bg-[#1F1F1F] border border-white/5 hover:border-white/20' 
+            : 'bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-lg'
+        }`}
       >
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden">
@@ -67,7 +74,7 @@ export function LargeFeaturedCard({ event }: { event: Event }) {
           
           {/* Category Badge */}
           <div className="absolute top-2 left-2">
-            <Badge className="bg-purple-500/80 text-white border-0 text-xs">
+            <Badge className={`border-0 text-xs ${isDark ? 'bg-purple-500/80 text-white' : 'bg-[#E23744] text-white'}`}>
               {event.category}
             </Badge>
           </div>
@@ -82,10 +89,10 @@ export function LargeFeaturedCard({ event }: { event: Event }) {
         <div className="p-3 space-y-2">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Floor price</p>
-              <p className="text-sm font-bold text-white">₹{(event.price || 0).toLocaleString("en-IN")}</p>
+              <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Floor price</p>
+              <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{(event.price || 0).toLocaleString("en-IN")}</p>
             </div>
-            <div className="text-right text-xs text-gray-400">
+            <div className={`text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {new Date(event.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
             </div>
           </div>
@@ -97,6 +104,8 @@ export function LargeFeaturedCard({ event }: { event: Event }) {
 
 // Medium Category Card (Sports, Music, etc.)
 export function CategoryEventCard({ event }: { event: Event }) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const imageUrl = isValidImageUrl(event.image) 
     ? event.image 
     : getVariedDefaultImage(event.title)
@@ -107,7 +116,11 @@ export function CategoryEventCard({ event }: { event: Event }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer bg-[#1F1F1F] border border-white/5 hover:border-white/20 transition-all duration-300"
+        className={`flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 ${
+          isDark 
+            ? 'bg-[#1F1F1F] border border-white/5 hover:border-white/20' 
+            : 'bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-lg'
+        }`}
       >
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden">
@@ -124,7 +137,7 @@ export function CategoryEventCard({ event }: { event: Event }) {
           
           {/* Category Badge */}
           <div className="absolute top-2 left-2">
-            <Badge className="bg-purple-500/80 text-white border-0 text-xs">
+            <Badge className={`border-0 text-xs ${isDark ? 'bg-purple-500/80 text-white' : 'bg-[#E23744] text-white'}`}>
               {event.category || 'Event'}
             </Badge>
           </div>
@@ -139,10 +152,10 @@ export function CategoryEventCard({ event }: { event: Event }) {
         <div className="p-3 space-y-2">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Floor price</p>
-              <p className="text-sm font-bold text-white">₹{(event.price || 0).toLocaleString("en-IN")}</p>
+              <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Floor price</p>
+              <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{(event.price || 0).toLocaleString("en-IN")}</p>
             </div>
-            <div className="text-right text-xs text-gray-400">
+            <div className={`text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {new Date(event.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
             </div>
           </div>
@@ -154,6 +167,8 @@ export function CategoryEventCard({ event }: { event: Event }) {
 
 // Small Compact Card (for trending/popular sections)
 export function CompactEventCard({ event }: { event: Event }) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const imageUrl = isValidImageUrl(event.image) 
     ? event.image 
     : getVariedDefaultImage(event.title)
@@ -164,7 +179,11 @@ export function CompactEventCard({ event }: { event: Event }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer bg-[#1F1F1F] border border-white/5 hover:border-white/20 transition-all duration-300"
+        className={`flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 ${
+          isDark 
+            ? 'bg-[#1F1F1F] border border-white/5 hover:border-white/20' 
+            : 'bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-lg'
+        }`}
       >
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden">
@@ -181,7 +200,7 @@ export function CompactEventCard({ event }: { event: Event }) {
           
           {/* Category Badge */}
           <div className="absolute top-2 left-2">
-            <Badge className="bg-purple-500/80 text-white border-0 text-xs">
+            <Badge className={`border-0 text-xs ${isDark ? 'bg-purple-500/80 text-white' : 'bg-[#E23744] text-white'}`}>
               {event.category || 'Event'}
             </Badge>
           </div>
@@ -196,10 +215,10 @@ export function CompactEventCard({ event }: { event: Event }) {
         <div className="p-3 space-y-2">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Floor price</p>
-              <p className="text-sm font-bold text-white">₹{(event.price || 0).toLocaleString("en-IN")}</p>
+              <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Floor price</p>
+              <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{(event.price || 0).toLocaleString("en-IN")}</p>
             </div>
-            <div className="text-right text-xs text-gray-400">
+            <div className={`text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {new Date(event.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
             </div>
           </div>
@@ -211,6 +230,8 @@ export function CompactEventCard({ event }: { event: Event }) {
 
 // Trending Card with Stats (like District.io trending section)
 export function TrendingEventCard({ event }: { event: Event }) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const imageUrl = isValidImageUrl(event.image) 
     ? event.image 
     : getVariedDefaultImage(event.title)
@@ -221,7 +242,11 @@ export function TrendingEventCard({ event }: { event: Event }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer bg-[#1F1F1F] border border-white/5 hover:border-white/20 transition-all duration-300"
+        className={`flex-shrink-0 w-80 relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 ${
+          isDark 
+            ? 'bg-[#1F1F1F] border border-white/5 hover:border-white/20' 
+            : 'bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-lg'
+        }`}
       >
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden">
@@ -253,10 +278,10 @@ export function TrendingEventCard({ event }: { event: Event }) {
         <div className="p-3 space-y-2">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Floor price</p>
-              <p className="text-sm font-bold text-white">₹{(event.price || 0).toLocaleString("en-IN")}</p>
+              <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Floor price</p>
+              <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{(event.price || 0).toLocaleString("en-IN")}</p>
             </div>
-            <div className="text-right text-xs text-gray-400">
+            <div className={`text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {new Date(event.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
             </div>
           </div>

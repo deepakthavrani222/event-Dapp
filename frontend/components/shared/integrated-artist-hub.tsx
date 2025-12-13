@@ -20,6 +20,7 @@ import {
 import { apiClient } from "@/lib/api/client"
 import { OpenSeaEventCard } from "@/components/shared/opensea-event-card"
 import type { Event } from "@/lib/types"
+import { useTheme } from "@/lib/context/ThemeContext"
 
 interface Artist {
   id: string
@@ -51,149 +52,52 @@ interface IntegratedArtistHubProps {
 export function IntegratedArtistHub({ className }: IntegratedArtistHubProps) {
   const [artists, setArtists] = useState<Artist[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Featured artists data (you can replace with API call)
-  const featuredArtists: Artist[] = [
-    {
-      id: "1",
-      name: "AP Dhillon",
-      slug: "ap-dhillon",
-      profileImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=face",
-      coverImage: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&h=400&fit=crop",
-      isVerified: true,
-      followerCount: 2500000,
-      bio: "Punjabi singer, rapper and record producer. Known for hits like 'Brown Munde', 'Excuses' and 'Insane'. Taking Punjabi music global.",
-      genre: "Punjabi Hip-Hop",
-      location: "Punjab, India",
-      socialLinks: {
-        instagram: "https://instagram.com/apdhillon",
-        twitter: "https://twitter.com/apdhillon",
-        spotify: "https://open.spotify.com/artist/apdhillon"
-      },
-      stats: {
-        totalEvents: 45,
-        upcomingEvents: 8,
-        totalTicketsSold: 125000
-      }
-    },
-    {
-      id: "2", 
-      name: "Karan Aujla",
-      slug: "karan-aujla",
-      profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop",
-      isVerified: true,
-      followerCount: 1800000,
-      bio: "Punjabi singer and songwriter. Famous for 'Don't Worry', 'Jhanjar' and 'White Brown Black'. The voice of new generation Punjabi music.",
-      genre: "Punjabi Pop",
-      location: "Punjab, India", 
-      socialLinks: {
-        instagram: "https://instagram.com/karanaujla",
-        twitter: "https://twitter.com/karanaujla",
-        spotify: "https://open.spotify.com/artist/karanaujla"
-      },
-      stats: {
-        totalEvents: 38,
-        upcomingEvents: 6,
-        totalTicketsSold: 98000
-      }
-    },
-    {
-      id: "3",
-      name: "Diljit Dosanjh", 
-      slug: "diljit-dosanjh",
-      profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop",
-      isVerified: true,
-      followerCount: 3200000,
-      bio: "Punjabi singer, actor and television presenter. Bollywood star and international touring artist. Known for 'Proper Patola', 'Do You Know'.",
-      genre: "Punjabi/Bollywood",
-      location: "Punjab, India",
-      socialLinks: {
-        instagram: "https://instagram.com/diljitdosanjh",
-        twitter: "https://twitter.com/diljitdosanjh", 
-        spotify: "https://open.spotify.com/artist/diljitdosanjh"
-      },
-      stats: {
-        totalEvents: 67,
-        upcomingEvents: 12,
-        totalTicketsSold: 245000
-      }
-    },
-    {
-      id: "4",
-      name: "Sidhu Moose Wala",
-      slug: "sidhu-moose-wala", 
-      profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop",
-      isVerified: true,
-      followerCount: 4100000,
-      bio: "Legendary Punjabi singer, rapper and songwriter. Known for 'So High', '295', 'Bambiha Bole'. His legacy continues to inspire millions.",
-      genre: "Punjabi Rap",
-      location: "Punjab, India",
-      socialLinks: {
-        instagram: "https://instagram.com/sidhu_moosewala",
-        spotify: "https://open.spotify.com/artist/sidhumoosewala"
-      },
-      stats: {
-        totalEvents: 89,
-        upcomingEvents: 0,
-        totalTicketsSold: 567000
-      }
-    },
-    {
-      id: "5",
-      name: "Badshah",
-      slug: "badshah",
-      profileImage: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=400&h=400&fit=crop&crop=face", 
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop",
-      isVerified: true,
-      followerCount: 2800000,
-      bio: "Indian rapper and music producer. Known for 'Mercy', 'Kala Chashma', 'Genda Phool'. Bollywood's favorite rapper and live performer.",
-      genre: "Hip-Hop/Bollywood",
-      location: "Delhi, India",
-      socialLinks: {
-        instagram: "https://instagram.com/badboyshah",
-        twitter: "https://twitter.com/its_badshah",
-        spotify: "https://open.spotify.com/artist/badshah"
-      },
-      stats: {
-        totalEvents: 52,
-        upcomingEvents: 9,
-        totalTicketsSold: 178000
-      }
-    },
-    {
-      id: "6",
-      name: "Divine",
-      slug: "divine",
-      profileImage: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=face",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop", 
-      isVerified: true,
-      followerCount: 1500000,
-      bio: "Mumbai-based rapper and hip-hop artist. Known for 'Mere Gully Mein', 'Farak', 'Kohinoor'. Pioneer of Indian street rap and gully rap movement.",
-      genre: "Hip-Hop/Rap",
-      location: "Mumbai, India",
-      socialLinks: {
-        instagram: "https://instagram.com/vivianakadivine",
-        twitter: "https://twitter.com/VivianDivine", 
-        spotify: "https://open.spotify.com/artist/divine"
-      },
-      stats: {
-        totalEvents: 34,
-        upcomingEvents: 7,
-        totalTicketsSold: 89000
-      }
-    }
-  ]
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   useEffect(() => {
-    // Simulate API call - replace with real API
-    setTimeout(() => {
-      setArtists(featuredArtists)
-      setLoading(false)
-    }, 1000)
+    fetchArtists()
   }, [])
+
+  const fetchArtists = async () => {
+    try {
+      // Fetch verified artists from API
+      const response = await apiClient.request('/api/public/artists?status=verified&limit=10')
+      
+      // Default Karan Aujla image for artists without profile image
+      const defaultArtistImage = 'https://i.scdn.co/image/ab6761610000e5eb5c0fef86231375a6e07e7d82'
+      
+      if (response.success && response.artists && response.artists.length > 0) {
+        const artistsData = response.artists.map((artist: any) => ({
+          id: artist.id,
+          name: artist.artistName || artist.realName || 'Unknown Artist',
+          slug: (artist.artistName || 'artist').toLowerCase().replace(/\s+/g, '-'),
+          profileImage: artist.profileImage || defaultArtistImage,
+          coverImage: artist.coverImage,
+          isVerified: artist.verificationStatus === 'verified',
+          followerCount: artist.fanCount || 0,
+          bio: artist.bio || '',
+          genre: Array.isArray(artist.genre) ? artist.genre.join(', ') : (artist.genre || 'Music'),
+          location: 'India',
+          socialLinks: artist.socialLinks || {},
+          stats: {
+            totalEvents: artist.totalEvents || 0,
+            upcomingEvents: artist.upcomingEvents || 0,
+            totalTicketsSold: artist.totalTicketsSold || 0
+          }
+        }))
+        setArtists(artistsData)
+      } else {
+        // No artists in database, show empty state
+        setArtists([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch artists:', error)
+      setArtists([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
 
 
@@ -209,15 +113,44 @@ export function IntegratedArtistHub({ className }: IntegratedArtistHubProps) {
       <section className={`py-20 ${className}`}>
         <div className="container px-12 mx-auto max-w-7xl">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-4xl md:text-5xl font-black text-white">Featured Artists</h2>
+            <h2 className={`text-4xl md:text-5xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Featured Artists</h2>
           </div>
           <div className="flex gap-6 overflow-x-auto pb-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="flex-shrink-0">
-                <div className="w-32 h-32 bg-white/10 rounded-full animate-pulse" />
-                <div className="mt-3 h-4 bg-white/10 rounded animate-pulse w-24" />
+                <div className={`w-32 h-32 rounded-full animate-pulse ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                <div className={`mt-3 h-4 rounded animate-pulse w-24 mx-auto ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Empty state when no artists
+  if (artists.length === 0) {
+    return (
+      <section className={`py-20 ${className}`}>
+        <div className="container px-12 mx-auto max-w-7xl">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className={`text-4xl md:text-5xl font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Featured <span className={isDark ? 'text-gradient-neon' : 'text-[#E23744]'}>Artists</span>
+              </h2>
+              <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Discover top artists and their upcoming shows</p>
+            </div>
+          </div>
+          <div className={`text-center py-12 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+            <Music className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No Artists Yet</h3>
+            <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Be the first artist to join our platform!</p>
+            <Button 
+              onClick={() => window.location.href = '/artist'}
+              className={isDark ? 'gradient-purple-cyan border-0 text-white' : 'bg-[#E23744] hover:bg-[#c92f3a] border-0 text-white'}
+            >
+              Become an Artist
+            </Button>
           </div>
         </div>
       </section>
@@ -235,15 +168,15 @@ export function IntegratedArtistHub({ className }: IntegratedArtistHubProps) {
         >
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-4xl md:text-5xl font-black text-white mb-2">
-                Featured <span className="text-gradient-neon">Artists</span>
+              <h2 className={`text-4xl md:text-5xl font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Featured <span className={isDark ? 'text-gradient-neon' : 'text-[#E23744]'}>Artists</span>
               </h2>
-              <p className="text-gray-400 text-lg">Discover top artists and their upcoming shows</p>
+              <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Discover top artists and their upcoming shows</p>
             </div>
             <Button 
               variant="link" 
               onClick={() => window.location.href = '/artists'}
-              className="text-cyan-400 hover:text-cyan-300 gap-2"
+              className={`gap-2 ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-[#E23744] hover:text-[#c92f3a]'}`}
             >
               View all
               <ChevronRight className="h-5 w-5" />
@@ -262,7 +195,7 @@ export function IntegratedArtistHub({ className }: IntegratedArtistHubProps) {
               >
                 <div className="relative">
                   {/* Artist Image */}
-                  <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-transparent group-hover:border-purple-500/50 transition-all duration-300 shadow-2xl">
+                  <div className={`relative w-36 h-36 rounded-full overflow-hidden border-4 border-transparent transition-all duration-300 shadow-2xl ${isDark ? 'group-hover:border-purple-500/50' : 'group-hover:border-[#E23744]/50'}`}>
                     <img
                       src={artist.profileImage}
                       alt={artist.name}
@@ -284,17 +217,17 @@ export function IntegratedArtistHub({ className }: IntegratedArtistHubProps) {
                   
                   {/* Artist Info */}
                   <div className="mt-4 text-center max-w-36">
-                    <h3 className="text-white font-bold text-lg group-hover:text-purple-400 transition-colors duration-300 truncate">
+                    <h3 className={`font-bold text-lg transition-colors duration-300 truncate ${isDark ? 'text-white group-hover:text-purple-400' : 'text-gray-900 group-hover:text-[#E23744]'}`}>
                       {artist.name}
                     </h3>
-                    <p className="text-gray-400 text-sm mt-1 truncate">{artist.genre}</p>
-                    <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-400">
+                    <p className={`text-sm mt-1 truncate ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{artist.genre}</p>
+                    <div className={`flex items-center justify-center gap-1 mt-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       <Users className="h-3 w-3" />
                       <span>{(artist.followerCount / 1000000).toFixed(1)}M</span>
                     </div>
                     {artist.stats.upcomingEvents > 0 && (
                       <div className="mt-2">
-                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                        <Badge className={`text-xs ${isDark ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-[#E23744]/10 text-[#E23744] border-[#E23744]/30'}`}>
                           {artist.stats.upcomingEvents} shows
                         </Badge>
                       </div>

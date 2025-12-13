@@ -36,7 +36,9 @@ import { checkRecentPurchase } from '@/lib/api/purchaseWithRefresh';
 import { TicketEntryScreen } from './TicketEntryScreen';
 import { GiftTransferDialog } from './GiftTransferDialog';
 import { ResellDialog } from './ResellDialog';
+import { RealisticTicketCard } from './RealisticTicketCard';
 import { toast } from '@/hooks/use-toast';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 interface TicketData {
   id: string;
@@ -69,6 +71,8 @@ interface ResaleListingData {
 
 export function MyTicketsHub() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [resaleListings, setResaleListings] = useState<ResaleListingData[]>([]);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -612,10 +616,10 @@ export function MyTicketsHub() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-white/10 rounded w-48"></div>
+          <div className={`h-8 rounded w-48 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-80 bg-white/10 rounded-xl"></div>
+              <div key={i} className={`h-80 rounded-xl ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}></div>
             ))}
           </div>
         </div>
@@ -626,42 +630,23 @@ export function MyTicketsHub() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-white mb-2">My Tickets</h1>
-          <p className="text-gray-400">Your personal ticket hub - like Amazon orders, but for events</p>
-        </div>
-        
-        {/* Wallet Balance */}
-        <div className="glass-card border-green-500/30 bg-green-500/10 p-4 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-              <Wallet className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-300">Wallet Balance</p>
-              <p className="text-2xl font-bold text-white">₹{walletBalance.toLocaleString()}</p>
-              <Button size="sm" className="mt-1 bg-green-500 hover:bg-green-600 text-white">
-                Withdraw to Bank
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div>
+        <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>My Tickets</h1>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="upcoming" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/20">
-          <TabsTrigger value="upcoming" className="data-[state=active]:bg-white/20">
+        <TabsList className={`grid w-full grid-cols-4 border ${isDark ? 'bg-white/5 border-white/20' : 'bg-gray-100 border-gray-200'}`}>
+          <TabsTrigger value="upcoming" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
             Upcoming ({upcomingTickets.length})
           </TabsTrigger>
-          <TabsTrigger value="past" className="data-[state=active]:bg-white/20">
+          <TabsTrigger value="past" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
             Past ({pastTickets.length})
           </TabsTrigger>
-          <TabsTrigger value="resale" className="data-[state=active]:bg-white/20">
+          <TabsTrigger value="resale" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
             Resale Listings ({resaleListings.length})
           </TabsTrigger>
-          <TabsTrigger value="wallet" className="data-[state=active]:bg-white/20">
+          <TabsTrigger value="wallet" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
             Wallet
           </TabsTrigger>
         </TabsList>
@@ -670,18 +655,37 @@ export function MyTicketsHub() {
         <TabsContent value="upcoming" className="space-y-6">
           {upcomingTickets.length === 0 ? (
             <div className="text-center py-12">
-              <Ticket className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No upcoming events</h3>
-              <p className="text-gray-400 mb-4">Browse events and book your next experience!</p>
+              <Ticket className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+              <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No upcoming events</h3>
+              <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Browse events and book your next experience!</p>
               <Button className="gradient-purple-cyan hover:opacity-90 border-0 text-white">
                 Browse Events
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {upcomingTickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
+                <RealisticTicketCard 
+                  key={ticket.id} 
+                  ticket={ticket}
+                  ownerName={user?.name || 'Guest'}
+                  onShowQR={() => {
+                    setSelectedTicket(ticket);
+                    setShowEntryScreen(true);
+                  }}
+                  onGift={() => {
+                    setSelectedTicket(ticket);
+                    setShowGiftDialog(true);
+                  }}
+                  onResell={() => {
+                    setSelectedTicket(ticket);
+                    setShowResellDialog(true);
+                  }}
+                  onDownload={() => {
+                    console.log('Downloading PDF for ticket:', ticket.id);
+                  }}
+                />
               ))}
             </div>
           )}
@@ -691,20 +695,39 @@ export function MyTicketsHub() {
         <TabsContent value="past" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Star className="h-5 w-5 text-yellow-400" />
-            <span className="text-white font-semibold">Collectibles</span>
-            <span className="text-gray-400 text-sm">- Keep your memories forever</span>
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Collectibles</span>
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>- Keep your memories forever</span>
           </div>
           
           {pastTickets.length === 0 ? (
             <div className="text-center py-12">
-              <Heart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No past events yet</h3>
-              <p className="text-gray-400">Your attended events will appear here as collectibles</p>
+              <Heart className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+              <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No past events yet</h3>
+              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Your attended events will appear here as collectibles</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {pastTickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
+                <RealisticTicketCard 
+                  key={ticket.id} 
+                  ticket={ticket}
+                  ownerName={user?.name || 'Guest'}
+                  onShowQR={() => {
+                    setSelectedTicket(ticket);
+                    setShowEntryScreen(true);
+                  }}
+                  onGift={() => {
+                    setSelectedTicket(ticket);
+                    setShowGiftDialog(true);
+                  }}
+                  onResell={() => {
+                    setSelectedTicket(ticket);
+                    setShowResellDialog(true);
+                  }}
+                  onDownload={() => {
+                    console.log('Downloading PDF for ticket:', ticket.id);
+                  }}
+                />
               ))}
             </div>
           )}
@@ -715,7 +738,7 @@ export function MyTicketsHub() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-400" />
-              <span className="text-white font-semibold">Active Listings</span>
+              <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Active Listings</span>
             </div>
             <Button className="gradient-purple-cyan hover:opacity-90 border-0 text-white">
               List New Ticket
@@ -724,10 +747,10 @@ export function MyTicketsHub() {
 
           {resaleListings.length === 0 ? (
             <div className="text-center py-12">
-              <DollarSign className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No active listings</h3>
-              <p className="text-gray-400 mb-4">List your tickets for resale and earn money</p>
-              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+              <DollarSign className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+              <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No active listings</h3>
+              <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>List your tickets for resale and earn money</p>
+              <Button variant="outline" className={isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}>
                 Learn About Reselling
               </Button>
             </div>
@@ -744,13 +767,13 @@ export function MyTicketsHub() {
         <TabsContent value="wallet" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Balance Card */}
-            <Card className="glass-card border-white/20 bg-white/5">
+            <Card className={isDark ? 'glass-card border-white/20 bg-white/5' : 'bg-white border border-gray-200 shadow-lg'}>
               <CardHeader>
-                <h3 className="text-xl font-bold text-white">Wallet Balance</h3>
+                <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Wallet Balance</h3>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <p className="text-4xl font-bold text-white">₹{walletBalance.toLocaleString()}</p>
+                  <p className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{walletBalance.toLocaleString()}</p>
                   <p className="text-gray-400">Available for withdrawal</p>
                 </div>
                 <Button className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white">

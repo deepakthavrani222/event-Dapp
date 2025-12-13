@@ -22,6 +22,7 @@ export function useRole() {
     name: authUser.name,
     email: authUser.email || '',
     role: (authUser.role?.toLowerCase() || 'buyer') as UserRole,
+    walletAddress: authUser.walletAddress,
     avatar: undefined
   } : null
 

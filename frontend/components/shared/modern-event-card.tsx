@@ -19,8 +19,8 @@ export function ModernEventCard({ id, title, image, venue, date, price, badge }:
   return (
     <Link href={`/event/${id}`}>
       <motion.div
-        whileHover={{ y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}
-        className="group rounded-3xl overflow-hidden bg-white shadow-sm"
+        whileHover={{ y: -8 }}
+        className="group rounded-2xl overflow-hidden bg-[#161616] border border-[#333333] shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
       >
         <div className="relative h-64 overflow-hidden">
           <Image
@@ -29,17 +29,19 @@ export function ModernEventCard({ id, title, image, venue, date, price, badge }:
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
           />
+          {/* Image overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70" />
           {badge && (
-            <div className="absolute top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
+            <div className="absolute top-4 right-4 bg-[#A78BFA] text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
               {badge}
             </div>
           )}
         </div>
         <div className="p-5 space-y-3">
-          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 group-hover:text-purple-600 transition-colors">
+          <h3 className="font-bold text-lg text-[#FFFFFF] line-clamp-2 group-hover:text-[#A78BFA] transition-colors">
             {title}
           </h3>
-          <div className="space-y-2 text-sm text-gray-600">
+          <div className="space-y-2 text-sm text-[#B0B0B0]">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
               <span>{venue}</span>
@@ -49,9 +51,9 @@ export function ModernEventCard({ id, title, image, venue, date, price, badge }:
               <span>{date}</span>
             </div>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <span className="text-lg font-bold text-gray-900">{price}</span>
-            <span className="text-sm text-purple-600 font-medium">onwards</span>
+          <div className="flex items-center justify-between pt-3 border-t border-[#333333]">
+            <span className="text-lg font-bold text-[#FFFFFF]">{price}</span>
+            <span className="text-sm text-[#A78BFA] font-medium">onwards</span>
           </div>
         </div>
       </motion.div>

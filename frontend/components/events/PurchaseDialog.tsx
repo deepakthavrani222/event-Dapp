@@ -15,7 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
+import { CryptoPayment } from '@/components/web3/CryptoPayment';
 
 interface PurchaseDialogProps {
   ticketType: any;
@@ -31,16 +32,23 @@ export function PurchaseDialog({
   onSuccess,
 }: PurchaseDialogProps) {
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [paymentMethod, setPaymentMethod] = useState('CRYPTO');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showCryptoPayment, setShowCryptoPayment] = useState(false);
 
   const totalPrice = ticketType.price * quantity;
   const platformFee = totalPrice * 0.05;
   const finalPrice = totalPrice + platformFee;
 
   const handlePurchase = async () => {
+    // If crypto payment selected, show crypto payment UI
+    if (paymentMethod === 'CRYPTO') {
+      setShowCryptoPayment(true);
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -76,6 +84,66 @@ export function PurchaseDialog({
       setLoading(false);
     }
   };
+
+  const handleCryptoSuccess = async (txHash: string) => {
+    setError('');
+    setLoading(true);
+
+    try {
+      // Complete purchase with crypto transaction hash
+      const response = await apiClient.purchaseTickets({
+        ticketTypeId: ticketType.id,
+        quantity,
+        paymentMethod: 'CRYPTO',
+        referralCode: referralCode || undefined,
+        transactionHash: txHash,
+      });
+
+      if (response.success) {
+        console.log('Crypto purchase successful!');
+        notifyTicketPurchased();
+        window.dispatchEvent(new CustomEvent('refreshTickets'));
+        localStorage.setItem('ticketPurchased', Date.now().toString());
+        onSuccess();
+      } else {
+        setError(response.error || 'Purchase failed');
+        setShowCryptoPayment(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Purchase failed');
+      setShowCryptoPayment(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show Crypto Payment UI
+  if (showCryptoPayment) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-lg bg-gray-900 border-white/20">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-orange-400" />
+              Pay with Crypto
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {eventTitle} - {ticketType.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <CryptoPayment
+            amountINR={finalPrice}
+            eventTitle={eventTitle}
+            ticketType={ticketType.name}
+            quantity={quantity}
+            onSuccess={handleCryptoSuccess}
+            onCancel={() => setShowCryptoPayment(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -120,22 +188,23 @@ export function PurchaseDialog({
           <div className="space-y-2">
             <Label>Payment Method</Label>
             <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 p-2 rounded-lg border border-orange-500/30 bg-orange-500/10">
+                <RadioGroupItem value="CRYPTO" id="crypto" />
+                <Label htmlFor="crypto" className="font-normal cursor-pointer flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-orange-400" />
+                  Pay with ETH (MetaMask)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 p-2 rounded-lg border border-white/10">
                 <RadioGroupItem value="UPI" id="upi" />
                 <Label htmlFor="upi" className="font-normal cursor-pointer">
                   UPI (Google Pay, PhonePe, Paytm)
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 p-2 rounded-lg border border-white/10">
                 <RadioGroupItem value="CARD" id="card" />
                 <Label htmlFor="card" className="font-normal cursor-pointer">
                   Credit/Debit Card
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="WALLET" id="wallet" />
-                <Label htmlFor="wallet" className="font-normal cursor-pointer">
-                  Crypto Wallet
                 </Label>
               </div>
             </RadioGroup>
@@ -167,11 +236,16 @@ export function PurchaseDialog({
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handlePurchase} disabled={loading}>
+          <Button onClick={handlePurchase} disabled={loading} className={paymentMethod === 'CRYPTO' ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600' : ''}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
+              </>
+            ) : paymentMethod === 'CRYPTO' ? (
+              <>
+                <Wallet className="mr-2 h-4 w-4" />
+                Pay with ETH
               </>
             ) : (
               `Pay ₹${finalPrice.toLocaleString()}`

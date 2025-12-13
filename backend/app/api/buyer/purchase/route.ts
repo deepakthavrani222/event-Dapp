@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { ticketTypeId, quantity, paymentMethod, referralCode } = body;
+    const { ticketTypeId, quantity, paymentMethod, referralCode, transactionHash } = body;
 
     // Validate input
     if (!ticketTypeId || !quantity || quantity < 1) {
@@ -81,12 +81,35 @@ export async function POST(request: NextRequest) {
     const platformFee = totalPrice * 0.05; // 5% platform fee
     const finalPrice = totalPrice + platformFee;
 
-    // Mock payment processing (in production: integrate Transak/Razorpay)
-    console.log('[MOCK] Processing payment:', {
-      amount: finalPrice,
-      currency: ticketType.currency,
-      method: paymentMethod || 'UPI',
-    });
+    // Handle crypto payment verification
+    if (paymentMethod === 'CRYPTO') {
+      if (!transactionHash) {
+        return NextResponse.json(
+          { error: 'Transaction hash required for crypto payment' },
+          { status: 400 }
+        );
+      }
+      
+      // Log crypto payment (in production: verify transaction on blockchain)
+      console.log('[CRYPTO] Payment received:', {
+        txHash: transactionHash,
+        amount: finalPrice,
+        buyer: auth.user!.walletAddress,
+      });
+      
+      // TODO: In production, verify the transaction:
+      // 1. Check transaction exists on blockchain
+      // 2. Verify amount matches expected ETH value
+      // 3. Verify recipient is platform wallet
+      // 4. Verify transaction is confirmed (enough blocks)
+    } else {
+      // Mock payment processing for UPI/Card (in production: integrate Transak/Razorpay)
+      console.log('[MOCK] Processing payment:', {
+        amount: finalPrice,
+        currency: ticketType.currency,
+        method: paymentMethod || 'UPI',
+      });
+    }
 
     // Mint NFT tickets (gasless)
     const mintResult = await mintTickets(
@@ -171,7 +194,9 @@ export async function POST(request: NextRequest) {
       referralCommission,
       status: 'COMPLETED',
       paymentMethod: paymentMethod || 'UPI',
-      txHash: mintResult.txHash,
+      txHash: paymentMethod === 'CRYPTO' ? transactionHash : mintResult.txHash,
+      cryptoTxHash: paymentMethod === 'CRYPTO' ? transactionHash : null,
+      mintTxHash: mintResult.txHash,
       referralId: referral?._id || null,
       createdAt: new Date(),
     });

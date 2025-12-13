@@ -27,6 +27,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ArtistMessagingProps {
   artistId: string;
@@ -103,7 +104,29 @@ export function ArtistMessaging({
       });
 
       if (response.success) {
-        setMessages(response.messages);
+        // Map API response to component format
+        const mappedMessages = (response.messages || []).map((msg: any) => ({
+          id: msg.id,
+          eventId: msg.eventId,
+          recipients: msg.segmentation?.type === 'golden_only' ? 'golden_ticket_holders' : 
+                      msg.segmentation?.type === 'event' ? 'event_attendees' : 'all_fans',
+          message: {
+            title: msg.title,
+            content: msg.content,
+            type: msg.richContent?.type || 'announcement',
+            mediaUrl: msg.richContent?.mediaUrl,
+            actionButton: msg.richContent?.actionButton
+          },
+          totalRecipients: msg.segmentation?.estimatedReach || 0,
+          deliveredCount: msg.analytics?.totalSent || 0,
+          readCount: msg.analytics?.totalOpened || 0,
+          clickCount: msg.analytics?.totalClicked || 0,
+          status: msg.status,
+          createdAt: msg.createdAt,
+          scheduledFor: msg.scheduledFor,
+          sentAt: msg.status === 'sent' ? msg.updatedAt : undefined
+        }));
+        setMessages(mappedMessages);
       }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -114,30 +137,42 @@ export function ArtistMessaging({
 
   const handleSendMessage = async () => {
     if (!newMessage.title || !newMessage.content) {
-      alert('Please fill in title and content');
       return;
     }
 
     setSending(true);
 
     try {
+      // Map component format to API format
+      const segmentationType = newMessage.recipients === 'golden_ticket_holders' ? 'golden_only' :
+                               newMessage.recipients === 'event_attendees' ? 'event' : 'all';
+      
       const response = await apiClient.request('/api/artist/messages', {
         method: 'POST',
         body: JSON.stringify({
-          ...newMessage,
-          message: {
-            title: newMessage.title,
-            content: newMessage.content,
+          title: newMessage.title,
+          content: newMessage.content,
+          richContent: {
             type: newMessage.type,
             mediaUrl: newMessage.mediaUrl || undefined,
             actionButton: newMessage.actionButton.text && newMessage.actionButton.url 
               ? newMessage.actionButton 
               : undefined
-          }
+          },
+          segmentation: {
+            type: segmentationType,
+            criteria: newMessage.eventId ? { eventId: newMessage.eventId } : undefined
+          },
+          scheduledFor: newMessage.scheduledFor || undefined,
+          sendImmediately: !newMessage.scheduledFor
         })
       });
 
       if (response.success) {
+        toast({
+          title: 'Message Sent!',
+          description: `Your message will reach ${response.estimatedReach || 0} fans.`,
+        });
         setShowComposer(false);
         setNewMessage({
           recipients: 'all_fans',
@@ -151,11 +186,19 @@ export function ArtistMessaging({
         });
         fetchMessages();
       } else {
-        alert(response.error || 'Failed to send message');
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to send message',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Send message error:', error);
-      alert('Failed to send message');
+      toast({
+        title: 'Error',
+        description: 'Failed to send message',
+        variant: 'destructive',
+      });
     } finally {
       setSending(false);
     }

@@ -12,6 +12,7 @@ import {
   TrendingEventCard 
 } from "@/components/shared/event-card-variants"
 import type { Event } from "@/lib/types"
+import { useTheme } from "@/lib/context/ThemeContext"
 
 type CardVariant = 'default' | 'large' | 'category' | 'compact' | 'trending'
 
@@ -33,6 +34,8 @@ export function EnhancedEventCarousel({
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -120,9 +123,9 @@ export function EnhancedEventCarousel({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-black text-white mb-1">{title}</h2>
+          <h2 className={`text-3xl font-black mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</h2>
           {subtitle && (
-            <p className="text-gray-400 text-sm">{subtitle}</p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{subtitle}</p>
           )}
         </div>
       </div>
