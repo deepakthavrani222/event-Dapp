@@ -309,7 +309,6 @@ export function TicketEntryScreen({ ticket, onBack }: TicketEntryScreenProps) {
                 fgColor="#000000"
                 bgColor="#ffffff"
                 level="H"
-                includeMargin={false}
               />
             </div>
           </div>

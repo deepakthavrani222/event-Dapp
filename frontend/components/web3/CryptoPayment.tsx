@@ -17,6 +17,7 @@ import {
 import { useWallet } from '@/lib/web3/useWallet';
 import { WEB3_CONFIG, inrToEth, ETH_TO_INR } from '@/lib/web3/config';
 import { toast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 interface CryptoPaymentProps {
   amountINR: number;
@@ -53,6 +54,8 @@ export function CryptoPayment({
 
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'confirming' | 'success' | 'failed'>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const amountETH = inrToEth(amountINR);
   const hasEnoughBalance = parseFloat(balance) >= amountETH;
@@ -108,33 +111,33 @@ export function CryptoPayment({
   return (
     <div className="space-y-6">
       {/* Payment Summary */}
-      <Card className="border-white/20 bg-white/5">
+      <Card className={isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}>
         <CardContent className="p-6">
-          <h3 className="text-lg font-bold text-white mb-4">Order Summary</h3>
+          <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Order Summary</h3>
           
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Event</span>
-              <span className="text-white font-medium">{eventTitle}</span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Event</span>
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{eventTitle}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Ticket Type</span>
-              <span className="text-white">{ticketType}</span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Ticket Type</span>
+              <span className={isDark ? 'text-white' : 'text-gray-900'}>{ticketType}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Quantity</span>
-              <span className="text-white">{quantity}</span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Quantity</span>
+              <span className={isDark ? 'text-white' : 'text-gray-900'}>{quantity}</span>
             </div>
-            <div className="border-t border-white/10 pt-3">
+            <div className={`border-t pt-3 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex justify-between">
-                <span className="text-gray-400">Total (INR)</span>
-                <span className="text-white font-bold">₹{amountINR.toLocaleString()}</span>
+                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total (INR)</span>
+                <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{amountINR.toLocaleString()}</span>
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-gray-400">Total (ETH)</span>
-                <span className="text-orange-400 font-bold">{amountETH.toFixed(6)} ETH</span>
+                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total (ETH)</span>
+                <span className="text-orange-500 font-bold">{amountETH.toFixed(6)} ETH</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                 Rate: 1 ETH = ₹{ETH_TO_INR.toLocaleString()}
               </p>
             </div>
@@ -143,7 +146,10 @@ export function CryptoPayment({
       </Card>
 
       {/* Wallet Status */}
-      <Card className={`border-2 ${isConnected ? 'border-green-500/30 bg-green-500/10' : 'border-orange-500/30 bg-orange-500/10'}`}>
+      <Card className={`border-2 ${isConnected 
+        ? isDark ? 'border-green-500/30 bg-green-900/20' : 'border-green-300 bg-green-50' 
+        : isDark ? 'border-orange-500/30 bg-orange-900/20' : 'border-orange-300 bg-orange-50'
+      }`}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -153,17 +159,17 @@ export function CryptoPayment({
               <div>
                 {isConnected ? (
                   <>
-                    <p className="text-sm font-medium text-white">
+                    <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {address?.slice(0, 6)}...{address?.slice(-4)}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                       Balance: {parseFloat(balance).toFixed(4)} ETH
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-white">Wallet Not Connected</p>
-                    <p className="text-xs text-gray-400">Connect MetaMask to pay</p>
+                    <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Wallet Not Connected</p>
+                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Connect MetaMask to pay</p>
                   </>
                 )}
               </div>
@@ -171,7 +177,7 @@ export function CryptoPayment({
             
             {isConnected ? (
               <div className="flex items-center gap-2">
-                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                <Badge className={isDark ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-green-100 text-green-700 border-green-300'}>
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Connected
                 </Badge>
@@ -179,7 +185,7 @@ export function CryptoPayment({
                   size="sm"
                   variant="ghost"
                   onClick={disconnect}
-                  className="h-7 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                  className={`h-7 px-2 text-xs ${isDark ? 'text-red-400 hover:text-red-300 hover:bg-red-500/20' : 'text-red-600 hover:text-red-700 hover:bg-red-100'}`}
                 >
                   Disconnect
                 </Button>
@@ -198,15 +204,15 @@ export function CryptoPayment({
 
           {/* Network Warning */}
           {isConnected && !isCorrectNetwork && (
-            <div className="mt-3 p-2 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-              <div className="flex items-center gap-2 text-yellow-300 text-xs">
+            <div className={`mt-3 p-2 rounded-lg border ${isDark ? 'bg-yellow-500/20 border-yellow-500/30' : 'bg-yellow-50 border-yellow-300'}`}>
+              <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
                 <AlertCircle className="h-4 w-4" />
                 <span>Please switch to Sepolia Testnet</span>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => switchNetwork('sepolia')}
-                  className="h-6 text-xs text-yellow-300 hover:text-yellow-200"
+                  className={`h-6 text-xs ${isDark ? 'text-yellow-300 hover:text-yellow-200' : 'text-yellow-700 hover:text-yellow-800'}`}
                 >
                   Switch
                 </Button>
@@ -216,8 +222,8 @@ export function CryptoPayment({
 
           {/* Balance Warning */}
           {isConnected && !hasEnoughBalance && (
-            <div className="mt-3 p-2 bg-red-500/20 rounded-lg border border-red-500/30">
-              <div className="flex items-center gap-2 text-red-300 text-xs">
+            <div className={`mt-3 p-2 rounded-lg border ${isDark ? 'bg-red-500/20 border-red-500/30' : 'bg-red-50 border-red-300'}`}>
+              <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-red-300' : 'text-red-700'}`}>
                 <AlertCircle className="h-4 w-4" />
                 <span>Insufficient balance. Need {amountETH.toFixed(6)} ETH</span>
               </div>
@@ -228,7 +234,7 @@ export function CryptoPayment({
 
       {/* Payment Status */}
       {paymentStatus !== 'idle' && (
-        <Card className="border-white/20 bg-white/5">
+        <Card className={isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}>
           <CardContent className="p-6 text-center">
             {paymentStatus === 'processing' && (
               <motion.div
@@ -236,10 +242,10 @@ export function CryptoPayment({
                 animate={{ opacity: 1 }}
                 className="space-y-4"
               >
-                <Loader2 className="h-12 w-12 animate-spin text-orange-400 mx-auto" />
+                <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto" />
                 <div>
-                  <p className="text-white font-semibold">Processing Payment</p>
-                  <p className="text-sm text-gray-400">Please confirm in MetaMask...</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Processing Payment</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Please confirm in MetaMask...</p>
                 </div>
               </motion.div>
             )}
@@ -250,16 +256,16 @@ export function CryptoPayment({
                 animate={{ opacity: 1 }}
                 className="space-y-4"
               >
-                <Loader2 className="h-12 w-12 animate-spin text-blue-400 mx-auto" />
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto" />
                 <div>
-                  <p className="text-white font-semibold">Confirming Transaction</p>
-                  <p className="text-sm text-gray-400">Waiting for blockchain confirmation...</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Confirming Transaction</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Waiting for blockchain confirmation...</p>
                   {txHash && (
                     <a
                       href={`https://sepolia.etherscan.io/tx/${txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center justify-center gap-1 mt-2"
+                      className="text-xs text-blue-500 hover:text-blue-600 flex items-center justify-center gap-1 mt-2"
                     >
                       View on Etherscan <ExternalLink className="h-3 w-3" />
                     </a>
@@ -278,8 +284,8 @@ export function CryptoPayment({
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-lg">Payment Successful!</p>
-                  <p className="text-sm text-gray-400">Your NFT tickets are being minted</p>
+                  <p className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>Payment Successful!</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Your NFT tickets are being minted</p>
                 </div>
               </motion.div>
             )}
@@ -294,13 +300,13 @@ export function CryptoPayment({
                   <AlertCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <p className="text-white font-semibold">Payment Failed</p>
-                  <p className="text-sm text-gray-400">{error || 'Transaction was rejected or failed'}</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Payment Failed</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{error || 'Transaction was rejected or failed'}</p>
                 </div>
                 <Button
                   onClick={() => setPaymentStatus('idle')}
                   variant="outline"
-                  className="border-white/20 text-white"
+                  className={isDark ? 'border-gray-600 text-white hover:bg-gray-700' : 'border-gray-300 text-gray-900 hover:bg-gray-100'}
                 >
                   Try Again
                 </Button>
@@ -336,13 +342,13 @@ export function CryptoPayment({
           <Button
             onClick={onCancel}
             variant="ghost"
-            className="w-full text-gray-400 hover:text-white"
+            className={`w-full ${isDark ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
           >
             Cancel
           </Button>
 
           {/* Security Note */}
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <div className={`flex items-center justify-center gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
             <Shield className="h-3 w-3" />
             <span>Secured by Ethereum blockchain</span>
           </div>

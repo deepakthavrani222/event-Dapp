@@ -75,7 +75,7 @@ export function RealisticTicketCard({
         whileHover={{ scale: 1.01 }}
         className="relative group"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 blur-lg rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 blur-lg rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
         
         <div className="relative bg-gradient-to-r from-yellow-500 via-yellow-400 to-orange-400 rounded-xl overflow-hidden shadow-lg">
           <div className="flex h-[120px]">
@@ -113,33 +113,72 @@ export function RealisticTicketCard({
             </div>
           </div>
         </div>
-        <div className="flex gap-1.5 mt-2">
-          <Button onClick={onShowQR} size="sm" className="flex-1 h-8 text-xs bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+        <div className="flex gap-1.5 mt-2 relative z-10">
+          <Button 
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation(); 
+              console.log('Golden ticket Show QR clicked');
+              onShowQR(); 
+            }} 
+            size="sm" 
+            className="flex-1 h-8 text-xs bg-yellow-500 hover:bg-yellow-600 text-black font-semibold cursor-pointer"
+          >
             <QrCode className="h-3.5 w-3.5 mr-1" />Show QR
           </Button>
-          {ticket.transferable && (
-            <Button onClick={onGift} size="sm" variant="outline" className={`h-8 px-3 ${
+          <Button 
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation(); 
+              console.log('Golden ticket Gift clicked');
+              onGift(); 
+            }} 
+            size="sm" 
+            variant="outline" 
+            className={`h-8 px-3 cursor-pointer ${
               isDark 
                 ? 'border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10' 
                 : 'border-yellow-600 text-yellow-700 hover:bg-yellow-50'
-            }`}>
-              <Gift className="h-3.5 w-3.5" />
-            </Button>
-          )}
-          {ticket.resellable && (
-            <Button onClick={onResell} size="sm" variant="outline" className={`h-8 px-3 ${
+            }`}
+          >
+            <Gift className="h-3.5 w-3.5" />
+          </Button>
+          <Button 
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation(); 
+              console.log('Golden ticket Resell clicked');
+              onResell(); 
+            }} 
+            size="sm" 
+            variant="outline" 
+            className={`h-8 px-3 cursor-pointer ${
               isDark 
                 ? 'border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10' 
                 : 'border-yellow-600 text-yellow-700 hover:bg-yellow-50'
-            }`}>
-              <DollarSign className="h-3.5 w-3.5" />
-            </Button>
-          )}
-          <Button onClick={onDownload} size="sm" variant="outline" className={`h-8 px-3 ${
-            isDark 
-              ? 'border-white/20 text-white hover:bg-white/10' 
-              : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-          }`}>
+            }`}
+          >
+            <DollarSign className="h-3.5 w-3.5" />
+          </Button>
+          <Button 
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation(); 
+              console.log('Golden ticket Download clicked');
+              onDownload(); 
+            }} 
+            size="sm" 
+            variant="outline" 
+            className={`h-8 px-3 cursor-pointer ${
+              isDark 
+                ? 'border-white/20 text-white hover:bg-white/10' 
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>

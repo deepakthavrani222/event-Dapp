@@ -27,6 +27,7 @@ import {
   Award,
 } from "lucide-react"
 import { NotificationBell } from "./notification-bell"
+import { ThemeToggle } from "./theme-toggle"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface DashboardHeaderProps {
@@ -66,11 +67,7 @@ const roleNavigation: Record<Exclude<UserRole, 'guest'>, Array<{ label: string; 
     { label: "Dashboard", href: "/reseller", icon: LayoutDashboard },
     { label: "Bulk Buy", href: "/reseller/bulk", icon: ShoppingBag },
   ],
-  admin: [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { label: "Events", href: "/admin?tab=approvals", icon: Calendar },
-    { label: "Users", href: "/admin?tab=users", icon: Users },
-  ],
+  admin: [],
   inspector: [
     { label: "Scanner", href: "/inspector", icon: ScanLine },
     { label: "History", href: "/inspector/history", icon: Calendar },
@@ -123,7 +120,8 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
         <div className="flex items-center gap-3">
           {/* User Info */}
           <div className="hidden md:flex items-center gap-3">
-            {authUser?.walletAddress && (
+            {/* Wallet address - hidden for admin and organizer */}
+            {role !== 'admin' && role !== 'organizer' && authUser?.walletAddress && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
                 <Wallet className="h-4 w-4 text-purple-400" />
                 <span className="text-sm text-gray-300">
@@ -138,6 +136,9 @@ export function DashboardHeader({ role }: DashboardHeaderProps) {
               </span>
             </div>
           </div>
+          
+          {/* Theme Toggle - Hidden for organizer and admin (always dark) */}
+          {role !== 'organizer' && role !== 'admin' && <ThemeToggle />}
           
           <NotificationBell />
 

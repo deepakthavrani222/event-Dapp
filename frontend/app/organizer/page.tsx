@@ -210,6 +210,7 @@ export default function OrganizerDashboard() {
   );
 
   return (
+    <>
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
@@ -548,8 +549,8 @@ export default function OrganizerDashboard() {
               >
                 <BarChart data={monthlyRevenue}>
                   <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <YAxis tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}K` : `₹${value}`} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toLocaleString()}`} />} />
                   <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
                 </BarChart>
               </ChartContainer>
@@ -659,8 +660,10 @@ export default function OrganizerDashboard() {
         )}
       </div>
       
-      {/* Footer */}
-      <Footer />
     </div>
+    
+    {/* Footer - Outside container for full width */}
+    <Footer />
+  </>
   );
 }

@@ -134,7 +134,7 @@ export function LocationModal({ isOpen, onClose, onSelectCity, currentCity }: Lo
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 flex items-start justify-center pt-16 z-[101] px-4 pointer-events-none"
+            className="fixed inset-0 flex items-start justify-center pt-20 z-[101] px-4 pointer-events-none"
           >
             <div className="w-full max-w-2xl pointer-events-auto bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
               {/* Header */}

@@ -2,17 +2,241 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Calendar, MapPin, User, Ticket, ArrowLeft, Share2, Heart, Clock, Users, Star, Plus, Minus, ShoppingCart, TrendingUp, Award, Zap } from "lucide-react"
+import { Calendar, MapPin, Ticket, Clock, Users, Plus, Minus, ShoppingCart, ChevronDown, ChevronUp, Globe, Navigation, X, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { format } from "date-fns"
 import { EnhancedPurchaseDialog } from "@/components/events/EnhancedPurchaseDialog"
 
-import { useAuth } from "@/lib/context/AuthContext"
+// District-Style Booking Flow Component
+function DistrictBookingFlow({ 
+  event, 
+  isDark, 
+  ticketSelections, 
+  updateTicketQuantity, 
+  getTicketQuantity, 
+  getTotalAmount, 
+  getTotalTickets,
+  onClose 
+}: {
+  event: any
+  isDark: boolean
+  ticketSelections: TicketSelection[]
+  updateTicketQuantity: (id: string, qty: number, type: any) => void
+  getTicketQuantity: (id: string) => number
+  getTotalAmount: () => number
+  getTotalTickets: () => number
+  onClose: () => void
+}) {
+  const [step, setStep] = useState<'select' | 'review' | 'payment'>('select')
+  const [timeLeft, setTimeLeft] = useState(300) // 5 minutes
+
+  // Countdown timer
+  useState(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev > 0 ? prev - 1 : 0)
+    }, 1000)
+    return () => clearInterval(timer)
+  })
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const bookingFee = Math.round(getTotalAmount() * 0.0825) // ~8.25% booking fee
+  const grandTotal = getTotalAmount() + bookingFee
+
+  // Step 3: MetaMask Payment
+  if (step === 'payment') {
+    return (
+      <EnhancedPurchaseDialog
+        selections={{
+          selections: ticketSelections,
+          total: getTotalAmount(),
+          totalTickets: getTotalTickets(),
+          eventId: event._id || event.id
+        }}
+        eventTitle={event.title}
+        onClose={onClose}
+        onSuccess={() => onClose()}
+      />
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-white">
+      {/* Header */}
+      <div className="bg-[#1C1C1C] text-white">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button onClick={onClose} className="flex items-center gap-2 text-white hover:text-gray-300">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="text-center">
+            <h1 className="font-bold text-lg">{event.title}</h1>
+            <p className="text-sm text-gray-400">
+              {event.startDate ? format(new Date(event.startDate), 'EEE, dd MMM') : ''} • {typeof event.venue === 'object' ? event.venue?.city : event.city || ''}
+            </p>
+          </div>
+          <div className="w-10" />
+        </div>
+
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {step === 'select' && (
+          <>
+            {/* Choose Tickets Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <h2 className="text-xl font-bold text-gray-900 tracking-wide">CHOOSE TICKETS</h2>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* Ticket Types */}
+            <div className="space-y-4">
+              {event.ticketTypes && event.ticketTypes.length > 0 ? (
+                event.ticketTypes.map((ticketType: any) => {
+                  const quantity = getTicketQuantity(ticketType._id || ticketType.id)
+                  const isAvailable = ticketType.availableSupply > 0
+                  
+                  return (
+                    <div 
+                      key={ticketType._id || ticketType.id}
+                      className="border border-gray-200 rounded-lg p-5"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{ticketType.name}</h3>
+                          <p className="text-xl font-bold text-gray-900 mb-2">₹{ticketType.price.toLocaleString()}</p>
+                          <ul className="text-sm text-gray-500 space-y-1">
+                            <li>• {ticketType.description || 'Standard event access'}</li>
+                            {ticketType.availableSupply && <li>• {ticketType.availableSupply} tickets remaining</li>}
+                          </ul>
+                        </div>
+                        
+                        {isAvailable ? (
+                          <div className="flex items-center bg-[#1C1C1C] rounded-lg overflow-hidden">
+                            <button
+                              onClick={() => updateTicketQuantity(ticketType._id || ticketType.id, Math.max(0, quantity - 1), ticketType)}
+                              className="px-3 py-2 text-white hover:bg-gray-700 transition-colors"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="px-4 py-2 text-white font-medium min-w-[40px] text-center">
+                              {quantity}
+                            </span>
+                            <button
+                              onClick={() => updateTicketQuantity(ticketType._id || ticketType.id, Math.min(10, quantity + 1), ticketType)}
+                              className="px-3 py-2 text-white hover:bg-gray-700 transition-colors"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-red-500 font-medium">Sold Out</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  No tickets available for this event
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {step === 'review' && (
+          <>
+            {/* Review Header */}
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Review your booking</h2>
+
+            {/* Selected Tickets */}
+            <div className="border border-gray-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                  {ticketSelections.map((selection) => (
+                    <div key={selection.ticketTypeId} className="mt-1">
+                      <p className="text-gray-600">{selection.name}</p>
+                      <p className="text-sm text-gray-500">{selection.quantity} ticket{selection.quantity > 1 ? 's' : ''}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="font-bold text-gray-900">₹{getTotalAmount().toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Payment Details */}
+            <div className="mb-6">
+              <h3 className="font-bold text-gray-900 mb-4 tracking-wide">PAYMENT DETAILS</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order Amount</span>
+                  <span className="text-gray-900">₹{getTotalAmount().toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Booking Fee</span>
+                  <div className="text-right">
+                    <span className="text-gray-900">₹{bookingFee.toLocaleString()}</span>
+                    <p className="text-xs text-gray-400">Includes taxes</p>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 pt-3 flex justify-between">
+                  <span className="font-bold text-gray-900">Grand Total</span>
+                  <span className="font-bold text-gray-900 text-xl">₹{grandTotal.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Bottom Bar */}
+      {getTotalTickets() > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-gray-900">₹{step === 'review' ? grandTotal.toLocaleString() : getTotalAmount().toLocaleString()}</p>
+              <p className="text-sm text-gray-500">{getTotalTickets()} ticket{getTotalTickets() > 1 ? 's' : ''}</p>
+            </div>
+            {step === 'select' ? (
+              <Button
+                onClick={() => setStep('review')}
+                className="bg-[#1C1C1C] hover:bg-[#2C2C2C] text-white px-8 py-3 rounded-lg font-semibold"
+              >
+                VIEW CART
+              </Button>
+            ) : (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep('select')}
+                  className="border-gray-300 text-gray-700 px-6 py-3"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep('payment')}
+                  className="bg-[#1C1C1C] hover:bg-[#2C2C2C] text-white px-8 py-3 rounded-lg font-semibold"
+                >
+                  CONTINUE
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+import { useTheme } from "next-themes"
 import { Footer } from "@/components/shared/footer"
+import { PublicHeader } from "@/components/shared/public-header"
 
 interface PremiumEventDetailProps {
   event: any
@@ -27,60 +251,66 @@ interface TicketSelection {
 }
 
 export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
-  const { isAuthenticated } = useAuth()
-  const [selectedTicketType, setSelectedTicketType] = useState<any>(null)
-  const [isLiked, setIsLiked] = useState(false)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const [ticketSelections, setTicketSelections] = useState<TicketSelection[]>([])
-  const [showCart, setShowCart] = useState(false)
-
+  const [showAboutMore, setShowAboutMore] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false)
 
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
       if (isNaN(date.getTime())) return 'Date TBD'
-      return format(date, 'PPPP')
+      return format(date, 'EEE, dd MMM, h:mm a')
     } catch {
       return 'Date TBD'
     }
   }
 
-  const formatTime = (startDateStr: string, endDateStr?: string) => {
+  const formatDateRange = (startDateStr: string, endDateStr?: string) => {
     try {
       const startDate = new Date(startDateStr)
-      if (isNaN(startDate.getTime())) return 'Time TBD'
+      if (isNaN(startDate.getTime())) return 'Date TBD'
       
-      const startTime = format(startDate, 'p')
-      if (!endDateStr) return startTime
+      const startFormatted = format(startDate, 'EEE, dd MMM, h:mm a')
+      if (!endDateStr) return startFormatted
       
       const endDate = new Date(endDateStr)
-      const endTime = isNaN(endDate.getTime()) ? startTime : format(endDate, 'p')
-      return `${startTime} - ${endTime}`
+      if (isNaN(endDate.getTime())) return startFormatted
+      
+      const endFormatted = format(endDate, 'EEE, dd MMM, h:mm a')
+      return `${startFormatted} – ${endFormatted}`
     } catch {
-      return 'Time TBD'
+      return 'Date TBD'
+    }
+  }
+
+  const getEventDuration = () => {
+    if (!event.startDate || !event.endDate) return null
+    try {
+      const start = new Date(event.startDate)
+      const end = new Date(event.endDate)
+      const diffMs = end.getTime() - start.getTime()
+      const diffHours = Math.round(diffMs / (1000 * 60 * 60))
+      if (diffHours < 1) return '< 1 Hour'
+      if (diffHours === 1) return '1 Hour'
+      return `${diffHours} Hours`
+    } catch {
+      return null
     }
   }
 
   const updateTicketQuantity = (ticketTypeId: string, quantity: number, ticketType: any) => {
     setTicketSelections(prev => {
-      const existing = prev.find(t => t.ticketTypeId === ticketTypeId)
       if (quantity === 0) {
         return prev.filter(t => t.ticketTypeId !== ticketTypeId)
       }
-      
+      const existing = prev.find(t => t.ticketTypeId === ticketTypeId)
       if (existing) {
-        return prev.map(t => 
-          t.ticketTypeId === ticketTypeId 
-            ? { ...t, quantity }
-            : t
-        )
-      } else {
-        return [...prev, {
-          ticketTypeId,
-          quantity,
-          price: ticketType.price,
-          name: ticketType.name
-        }]
+        return prev.map(t => t.ticketTypeId === ticketTypeId ? { ...t, quantity } : t)
       }
+      return [...prev, { ticketTypeId, quantity, price: ticketType.price, name: ticketType.name }]
     })
   }
 
@@ -89,482 +319,247 @@ export function PremiumEventDetail({ event, onBack }: PremiumEventDetailProps) {
   }
 
   const getTotalAmount = () => {
-    return ticketSelections.reduce((total, selection) => 
-      total + (selection.quantity * selection.price), 0
-    )
+    return ticketSelections.reduce((total, s) => total + (s.quantity * s.price), 0)
   }
 
   const getTotalTickets = () => {
-    return ticketSelections.reduce((total, selection) => total + selection.quantity, 0)
+    return ticketSelections.reduce((total, s) => total + s.quantity, 0)
   }
 
-  const getTicketTypeIcon = (name: string) => {
-    const lowerName = name.toLowerCase()
-    if (lowerName.includes('vip') || lowerName.includes('premium')) return <Award className="h-4 w-4" />
-    if (lowerName.includes('early') || lowerName.includes('bird')) return <Zap className="h-4 w-4" />
-    if (lowerName.includes('general') || lowerName.includes('standard')) return <Ticket className="h-4 w-4" />
-    return <Ticket className="h-4 w-4" />
+  const getLowestPrice = () => {
+    if (!event.ticketTypes || event.ticketTypes.length === 0) return event.price || 0
+    return Math.min(...event.ticketTypes.map((t: any) => t.price))
   }
 
-  const getTicketTypeColor = (name: string) => {
-    const lowerName = name.toLowerCase()
-    if (lowerName.includes('vip') || lowerName.includes('premium')) return 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30'
-    if (lowerName.includes('early') || lowerName.includes('bird')) return 'from-green-500/20 to-emerald-500/20 border-green-500/30'
-    if (lowerName.includes('general') || lowerName.includes('standard')) return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30'
-    return 'from-purple-500/20 to-pink-500/20 border-purple-500/30'
+  const getImageUrl = () => {
+    if (!event.image) return '/concert-stage-purple-lights.jpg'
+    if (event.image === '/placeholder.svg') return '/concert-stage-purple-lights.jpg'
+    if (event.image.startsWith('blob:')) return '/concert-stage-purple-lights.jpg'
+    return event.image
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative h-[70vh] overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <img
-            src={(() => {
-              if (!event.image) return '/concert-stage-purple-lights.jpg'
-              if (event.image === '/placeholder.svg') return '/concert-stage-purple-lights.jpg'
-              if (event.image.startsWith('blob:')) return '/concert-stage-purple-lights.jpg'
-              if (event.image.includes('cloudinary.com')) return event.image
-              if (event.image.includes('unsplash.com')) return event.image
-              if (event.image.startsWith('https://') || event.image.startsWith('http://')) return event.image
-              if (event.image.startsWith('/') && !event.image.includes('placeholder')) return event.image
-              return '/concert-stage-purple-lights.jpg'
-            })()}
-            alt={event.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.log('PremiumEventDetail - Image failed to load:', event.image);
-              const target = e.target as HTMLImageElement;
-              target.src = '/concert-stage-purple-lights.jpg';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
-        </div>
-
-        {/* Floating Orbs */}
-        <div className="absolute top-20 left-20 w-64 h-64 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-6 h-full flex flex-col justify-start py-8">
-          {/* Top Navigation */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="glass-card border-white/20 text-white hover:bg-white/10 gap-2 rounded-full bg-black/20 backdrop-blur-md"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsLiked(!isLiked)}
-                className="glass-card border-white/20 text-white hover:bg-white/10 rounded-full bg-black/20 backdrop-blur-md"
-              >
-                <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="glass-card border-white/20 text-white hover:bg-white/10 rounded-full bg-black/20 backdrop-blur-md"
-              >
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Event Details */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Description */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-4"
-            >
-              <h2 className="text-3xl font-bold text-white">About This Event</h2>
-              <p className="text-lg text-gray-300 leading-relaxed">
-                {event.description || "Experience an unforgettable event that will leave you with memories to last a lifetime."}
-              </p>
-            </motion.div>
-
-            {/* Event Details Grid */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-xl space-y-4">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Venue Details
-                </h3>
-                <div className="space-y-2 text-gray-300">
-                  <p className="font-semibold">
-                    {typeof event.venue === 'object' ? event.venue.name : event.venue}
-                  </p>
-                  {typeof event.venue === 'object' && event.venue.address && (
-                    <p className="text-sm">{event.venue.address}</p>
-                  )}
-                  <p className="text-sm">
-                    {typeof event.venue === 'object' 
-                      ? `${event.venue.city}, ${event.venue.state}`
-                      : `${event.city || ''}`
-                    }
-                  </p>
-                </div>
+    <div className={`min-h-screen ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+      <PublicHeader />
+      
+      <div className="pt-20">
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8">
+          {/* Top Section - Image + Info Card */}
+          <div className="grid lg:grid-cols-5 gap-8 mb-12">
+            {/* Event Image - Left Side */}
+            <div className="lg:col-span-3 relative">
+              <div className="relative rounded-2xl overflow-hidden aspect-[16/10]">
+                <img
+                  src={getImageUrl()}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/concert-stage-purple-lights.jpg'
+                  }}
+                />
               </div>
+            </div>
 
-              {event.organizer && (
-                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-xl space-y-4">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-secondary" />
-                    Organizer
-                  </h3>
-                  <div className="space-y-2 text-gray-300">
-                    <p className="font-semibold">{event.organizer.name}</p>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Star className="h-4 w-4 text-yellow-400" />
-                      <span>Verified Organizer</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Event Info Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="space-y-6"
-            >
-              <div className="space-y-4">
-                <Badge className="bg-primary/20 text-primary border-primary/30 backdrop-blur-sm px-4 py-2 text-sm font-semibold">
-                  {event.category}
-                </Badge>
-
-                <h1 className="text-4xl md:text-6xl font-black text-white leading-tight">
+            {/* Event Info Card - Right Side */}
+            <div className="lg:col-span-2">
+              <div className={`rounded-2xl p-6 ${isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200 shadow-lg'}`}>
+                {/* Event Title */}
+                <h1 className={`text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
                   {event.title}
                 </h1>
 
-                {event.artist && (
-                  <p className="text-xl text-gray-300 font-medium">
-                    by {event.artist}
-                  </p>
-                )}
-              </div>
-
-              {/* Quick Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 text-white">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-gray-300">Date</p>
-                      <p className="font-semibold">{formatDate(event.startDate || event.date)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 text-white">
-                    <Clock className="h-5 w-5 text-secondary" />
-                    <div>
-                      <p className="text-sm text-gray-300">Time</p>
-                      <p className="font-semibold">{formatTime(event.startDate || event.date, event.endDate)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 text-white">
-                    <MapPin className="h-5 w-5 text-yellow-400" />
-                    <div>
-                      <p className="text-sm text-gray-300">Venue</p>
-                      <p className="font-semibold line-clamp-1">
-                        {typeof event.venue === 'object' ? event.venue.name : event.venue}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-          </div>
-
-          {/* Ticket Selection */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-6"
-          >
-            <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Ticket className="h-6 w-6 text-primary" />
-                  Select Tickets
-                </h2>
-                {getTotalTickets() > 0 && (
-                  <Button
-                    onClick={() => setShowCart(!showCart)}
-                    className="glass-card border-primary/30 text-primary hover:bg-primary/10 gap-2 rounded-full bg-primary/5 backdrop-blur-md"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    {getTotalTickets()}
-                  </Button>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                {event.ticketTypes && event.ticketTypes.length > 0 ? event.ticketTypes.map((ticketType: any, index: number) => {
-                  const quantity = getTicketQuantity(ticketType.id)
-                  const isAvailable = ticketType.availableSupply > 0
-                  const soldPercentage = ((ticketType.totalSupply - ticketType.availableSupply) / ticketType.totalSupply) * 100
-                  
-                  return (
-                    <motion.div
-                      key={ticketType.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`glass-card border backdrop-blur-sm bg-gradient-to-r ${getTicketTypeColor(ticketType.name)} p-5 rounded-xl hover:scale-[1.02] transition-all duration-300`}
-                    >
-                      <div className="space-y-4">
-                        {/* Header */}
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                              {getTicketTypeIcon(ticketType.name)}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                {ticketType.name}
-                                {soldPercentage > 80 && (
-                                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
-                                    <TrendingUp className="h-3 w-3 mr-1" />
-                                    Hot
-                                  </Badge>
-                                )}
-                              </h3>
-                              <p className="text-sm text-gray-300">{ticketType.description || "Standard event access"}</p>
-                            </div>
-                          </div>
-                          <Badge variant={isAvailable ? 'default' : 'secondary'} className="shrink-0">
-                            {isAvailable ? 'Available' : 'Sold Out'}
-                          </Badge>
-                        </div>
-
-                        {/* Price and Availability */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                              ₹{ticketType.price.toLocaleString()}
-                            </span>
-                            <span className="text-sm text-gray-400 ml-2">per ticket</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1 text-sm text-gray-300">
-                              <Users className="h-4 w-4" />
-                              <span>{ticketType.availableSupply} left</span>
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              of {ticketType.totalSupply} total
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Sold: {soldPercentage.toFixed(0)}%</span>
-                            <span>Max {Math.min(ticketType.maxPerWallet || 6, 6)} per person (Anti-scalping)</span>
-                          </div>
-                          <div className="w-full bg-white/10 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${soldPercentage}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Quantity Selector */}
-                        {isAvailable ? (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateTicketQuantity(ticketType.id, Math.max(0, quantity - 1), ticketType)}
-                                disabled={quantity === 0}
-                                className="h-10 w-10 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max={Math.min(ticketType.availableSupply, Math.min(ticketType.maxPerWallet || 6, 6))}
-                                  value={quantity}
-                                  onChange={(e) => {
-                                    const newQuantity = Math.max(0, Math.min(parseInt(e.target.value) || 0, Math.min(ticketType.maxPerWallet || 6, 6)))
-                                    updateTicketQuantity(ticketType.id, newQuantity, ticketType)
-                                  }}
-                                  className="w-16 text-center bg-white/10 border-white/20 text-white"
-                                />
-                                <span className="text-sm text-gray-400">tickets</span>
-                              </div>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateTicketQuantity(ticketType.id, Math.min(ticketType.availableSupply, Math.min(ticketType.maxPerWallet || 6, 6), quantity + 1), ticketType)}
-                                disabled={quantity >= Math.min(ticketType.availableSupply, Math.min(ticketType.maxPerWallet || 6, 6))}
-                                className="h-10 w-10 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-
-                            {quantity > 0 && (
-                              <div className="text-right">
-                                <p className="text-lg font-bold text-white">
-                                  ₹{(quantity * ticketType.price).toLocaleString()}
-                                </p>
-                                <p className="text-xs text-gray-400">subtotal</p>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <Button disabled className="w-full h-12 rounded-xl bg-gray-600 text-gray-400">
-                            Sold Out
-                          </Button>
-                        )}
-                      </div>
-                    </motion.div>
-                  )
-                }) : (
-                  <div className="text-center py-12 text-gray-400">
-                    <Ticket className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">No tickets available</h3>
-                    <p>Tickets for this event haven't been released yet.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Shopping Cart Summary */}
-            {getTotalTickets() > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="glass-card border-primary/30 backdrop-blur-sm bg-primary/5 p-6 rounded-xl"
-              >
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                  Your Selection
-                </h3>
-                
-                <div className="space-y-3 mb-4">
-                  {ticketSelections.map((selection) => (
-                    <div key={selection.ticketTypeId} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-300">
-                        {selection.quantity}x {selection.name}
-                      </span>
-                      <span className="text-white font-semibold">
-                        ₹{(selection.quantity * selection.price).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator className="my-4 bg-white/10" />
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-lg font-bold text-white">Total</span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    ₹{getTotalAmount().toLocaleString()}
+                {/* Category */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Ticket className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+                    {event.category || 'Music, Entertainment'}
                   </span>
                 </div>
 
-                <Button
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      setSelectedTicketType({ 
-                        selections: ticketSelections, 
-                        total: getTotalAmount(),
-                        totalTickets: getTotalTickets()
-                      })
-                    } else {
-                      // Redirect to login with return URL
-                      const returnUrl = encodeURIComponent(window.location.pathname)
-                      window.location.href = `/login?redirect=${returnUrl}`
-                    }
-                  }}
-                  className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white font-semibold h-14 rounded-xl text-lg"
-                >
-                  {isAuthenticated 
-                    ? `Purchase ${getTotalTickets()} Ticket${getTotalTickets() > 1 ? 's' : ''}`
-                    : `Login to Buy ${getTotalTickets()} Ticket${getTotalTickets() > 1 ? 's' : ''}`
-                  }
-                  <ArrowLeft className="h-5 w-5 ml-2 rotate-180" />
-                </Button>
-              </motion.div>
-            )}
-
-            {/* Event Stats */}
-            <div className="glass-card border-border/50 backdrop-blur-sm bg-card/40 p-6 rounded-xl">
-              <h3 className="text-lg font-bold text-white mb-4">Event Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">
-                    {event.ticketTypes?.reduce((acc: number, tt: any) => acc + (tt.totalSupply - tt.availableSupply), 0) || 0}
-                  </p>
-                  <p className="text-sm text-gray-400">Tickets Sold</p>
+                {/* Date & Time */}
+                <div className="flex items-start gap-2 mb-4">
+                  <Calendar className={`h-4 w-4 mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+                    {formatDateRange(event.startDate, event.endDate)}
+                  </span>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-secondary">
-                    {event.ticketTypes?.reduce((acc: number, tt: any) => acc + tt.availableSupply, 0) || 0}
-                  </p>
-                  <p className="text-sm text-gray-400">Available</p>
+
+                {/* Venue */}
+                <div className="flex items-start gap-2 mb-6">
+                  <MapPin className={`h-4 w-4 mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+                    {typeof event.venue === 'object' ? event.venue?.name : event.venue}
+                    {event.city ? `, ${event.city}` : (typeof event.venue === 'object' && event.venue?.city ? `, ${event.venue.city}` : '')}
+                  </span>
+                </div>
+
+                {/* Price & Book Button */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`} style={{ fontFamily: 'Inter, sans-serif' }}>Starts from</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+                      ₹{getLowestPrice().toLocaleString()}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowPurchaseDialog(true)}
+                    className="bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white px-6 py-3 rounded-lg font-semibold"
+                    style={{ fontFamily: 'Inter, sans-serif' }}
+                  >
+                    BOOK TICKETS
+                  </Button>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
+
+          {/* About the Event */}
+          <div className="mb-8">
+            <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+              About the Event
+            </h2>
+            <div className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+              <p className={showAboutMore ? '' : 'line-clamp-4'}>
+                {event.description || 'No description available for this event.'}
+              </p>
+              {event.description && event.description.length > 200 && (
+                <button
+                  onClick={() => setShowAboutMore(!showAboutMore)}
+                  className={`mt-2 font-medium flex items-center gap-1 ${isDark ? 'text-purple-400' : 'text-gray-900'}`}
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                >
+                  {showAboutMore ? 'Show less' : 'Show more'}
+                  {showAboutMore ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Event Guide */}
+          <div className="mb-8">
+            <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+              Event Guide
+            </h2>
+            <div className="flex flex-wrap gap-8">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                  <Globe className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Language</p>
+                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>English</p>
+                </div>
+              </div>
+              
+              {getEventDuration() && (
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                    <Clock className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Duration</p>
+                    <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{getEventDuration()}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                  <Users className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Age Requirement</p>
+                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>18 yrs & above</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Venue */}
+          <div className="mb-8">
+            <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+              Venue
+            </h2>
+            <div className={`rounded-xl p-4 ${isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+                    {typeof event.venue === 'object' ? event.venue?.name : event.venue || 'Venue TBD'}
+                  </h3>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+                    {typeof event.venue === 'object' 
+                      ? `${event.venue?.address || ''}, ${event.venue?.city || ''}, ${event.venue?.state || ''}`.replace(/^, |, $/g, '')
+                      : event.address || `${event.venue}, ${event.city || ''}`
+                    }
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className={`flex items-center gap-2 ${isDark ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-300 text-gray-900 hover:bg-gray-50'}`}
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                  onClick={() => {
+                    const venueName = typeof event.venue === 'object' ? event.venue?.name : event.venue
+                    const venueCity = typeof event.venue === 'object' ? event.venue?.city : event.city
+                    const query = encodeURIComponent(`${venueName} ${venueCity || ''}`)
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank')
+                  }}
+                >
+                  <Navigation className="h-4 w-4" />
+                  GET DIRECTIONS
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Terms & Conditions */}
+          <div className="mb-8">
+            <div 
+              className={`rounded-xl border ${isDark ? 'border-gray-800' : 'border-gray-200'}`}
+            >
+              <button
+                onClick={() => setShowTerms(!showTerms)}
+                className={`w-full p-4 flex items-center justify-between ${isDark ? 'text-white' : 'text-gray-900'}`}
+              >
+                <span className="font-semibold">Terms & Conditions</span>
+                {showTerms ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </button>
+              
+              {showTerms && (
+                <div className={`px-4 pb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li>Please carry a valid ID proof along with you.</li>
+                    <li>No refunds on purchased ticket are possible, even in case of any rescheduling.</li>
+                    <li>Security procedures, including frisking remain the right of the management.</li>
+                    <li>No dangerous or potentially hazardous objects including but not limited to weapons, knives, guns, fireworks, helmets, laser devices, bottles, musical instruments will be allowed in the venue.</li>
+                    <li>The sponsors/performers/organizers are not responsible for any injury or damage occurring due to the event.</li>
+                    <li>People in an inebriated state may not be allowed entry.</li>
+                    <li>Organizers hold the right to deny late entry to the event.</li>
+                    <li>Venue rules apply.</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        <Footer />
       </div>
 
-      {/* Enhanced Purchase Dialog */}
-      {selectedTicketType && (
-        <EnhancedPurchaseDialog
-          selections={selectedTicketType}
-          eventTitle={event.title}
-          onClose={() => setSelectedTicketType(null)}
-          onSuccess={() => {
-            setSelectedTicketType(null)
-            setTicketSelections([])
-          }}
+      {/* District-Style Booking Flow */}
+      {showPurchaseDialog && (
+        <DistrictBookingFlow
+          event={event}
+          isDark={isDark}
+          ticketSelections={ticketSelections}
+          updateTicketQuantity={updateTicketQuantity}
+          getTicketQuantity={getTicketQuantity}
+          getTotalAmount={getTotalAmount}
+          getTotalTickets={getTotalTickets}
+          onClose={() => setShowPurchaseDialog(false)}
         />
       )}
-
-
-
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

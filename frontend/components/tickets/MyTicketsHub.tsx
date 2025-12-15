@@ -55,6 +55,8 @@ interface TicketData {
   status: 'upcoming' | 'past' | 'used';
   transferable: boolean;
   resellable: boolean;
+  isGolden?: boolean;
+  perks?: string[];
 }
 
 interface ResaleListingData {
@@ -119,13 +121,15 @@ export function MyTicketsHub() {
           city: ticket.event?.city || 'Mumbai',
           date: ticket.event?.startDate || new Date().toISOString(),
           seatNumber: `${ticket.ticketType?.name || 'GA'}-${ticket.tokenId}`,
-          ticketType: ticket.ticketType?.name || 'General Admission',
+          ticketType: ticket.ticketType?.name || (ticket.isGolden ? 'Golden VIP' : 'General Admission'),
           price: ticket.price || 0,
           qrCode: `QR_${ticket.tokenId}_${ticket.id}`,
           status: ticket.status === 'USED' ? 'past' : 
                  (eventDate < now ? 'past' : 'upcoming') as 'upcoming' | 'past' | 'used',
           transferable: ticket.status === 'ACTIVE',
-          resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1)
+          resellable: ticket.status === 'ACTIVE' && eventDate > addDays(now, 1),
+          isGolden: ticket.isGolden || false,
+          perks: ticket.perks || [],
         };
       });
       

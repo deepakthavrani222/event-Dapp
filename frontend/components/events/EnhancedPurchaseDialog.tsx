@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Wallet, Check, ArrowRight, Shield, Zap } from "lucide-react"
+import { X, Wallet, Check, ArrowRight, Shield, Zap, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { apiClient } from '@/lib/api/client'
 import { notifyTicketPurchased } from '@/lib/hooks/useRealTimeTickets'
 import { CryptoPayment } from '@/components/web3/CryptoPayment'
+import { useTheme } from "next-themes"
 
 interface EnhancedPurchaseDialogProps {
   selections: any
@@ -21,75 +22,20 @@ interface EnhancedPurchaseDialogProps {
   onSuccess: () => void
 }
 
+const paymentMethods = [
+  { id: 'crypto', name: 'MetaMask Wallet', description: 'Pay with ETH - Secure blockchain payment', icon: Wallet },
+  { id: 'upi', name: 'UPI Payment', description: 'PhonePe, GPay, Paytm, BHIM', icon: CreditCard },
+]
+
 export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSuccess }: EnhancedPurchaseDialogProps) {
-  const [step, setStep] = useState(1) // 1: Review, 2: Payment, 3: Success, 4: Crypto Payment
-  const [paymentMethod, setPaymentMethod] = useState("wallet") // Default to crypto wallet
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  const [step, setStep] = useState(1) // 1: Review, 2: Payment Method, 3: Success, 4: Crypto Payment
   const [processing, setProcessing] = useState(false)
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState('crypto')
+  const [email, setEmail] = useState('')
 
-  const paymentMethods = [
-    { id: "wallet", name: "Pay with ETH (MetaMask)", icon: Wallet, description: "Connect MetaMask & pay with ETH" },
-  ]
 
-  const handlePurchase = async () => {
-    // If crypto/wallet payment selected, show MetaMask payment UI
-    if (paymentMethod === 'wallet') {
-      setStep(4) // Go to crypto payment step
-      return
-    }
-
-    setProcessing(true)
-    
-    try {
-      // Use real API call instead of mock
-      // Handle multiple ticket selections by purchasing each one
-      const purchasePromises = selections.selections.map((selection: any) => 
-        apiClient.purchaseTickets({
-          ticketTypeId: selection.ticketTypeId,
-          quantity: selection.quantity,
-          paymentMethod: paymentMethod.toUpperCase(),
-          referralCode: undefined, // Could be added to form later
-        })
-      );
-
-      const responses = await Promise.all(purchasePromises);
-      const allSuccessful = responses.every(response => response.success);
-
-      if (!allSuccessful) {
-        const failedResponses = responses.filter(r => !r.success);
-        throw new Error(failedResponses[0]?.error || 'Some purchases failed');
-      }
-
-      if (allSuccessful) {
-        console.log('Purchase successful! Refreshing tickets...');
-        
-        // Trigger My Tickets refresh immediately
-        notifyTicketPurchased();
-        
-        // Also trigger global refresh events
-        window.dispatchEvent(new CustomEvent('refreshTickets'));
-        
-        // Set localStorage flag for cross-tab communication
-        localStorage.setItem('ticketPurchased', Date.now().toString());
-        
-        // Refresh triggers sent
-        
-        setProcessing(false)
-        setStep(3)
-        
-        // Auto close after success
-        setTimeout(() => {
-          onSuccess()
-        }, 3000)
-      }
-    } catch (error: any) {
-      console.error('🎫 Enhanced Purchase failed:', error);
-      setProcessing(false);
-      // Could add error state here
-      alert(`Purchase failed: ${error.message}`);
-    }
-  }
 
   // Handle successful crypto payment from MetaMask
   const handleCryptoSuccess = async (txHash: string) => {
@@ -132,7 +78,7 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
     } catch (error: any) {
       console.error('🎫 Crypto Purchase failed:', error);
       setProcessing(false);
-      setStep(2); // Go back to payment selection
+      setStep(1); // Go back to review
       alert(`Purchase failed: ${error.message}`);
     }
   }
@@ -147,55 +93,63 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-background border border-border/50 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+          className={`rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden ${
+            isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200 shadow-2xl'
+          }`}
         >
           {/* Header */}
-          <div className="p-6 border-b border-border/50 bg-gradient-to-r from-primary/10 to-secondary/10">
+          <div className={`p-6 border-b ${isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {step === 1 && "Review Your Order"}
-                  {step === 2 && "Payment Details"}
+                  {step === 2 && "Choose Payment Method"}
                   {step === 3 && "Purchase Successful!"}
                   {step === 4 && "Pay with MetaMask"}
                 </h2>
-                <p className="text-gray-400">{eventTitle}</p>
+                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>{eventTitle}</p>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="text-gray-400 hover:text-white"
+                className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}
               >
                 <X className="h-5 w-5" />
               </Button>
             </div>
 
             {/* Progress Steps */}
-            <div className="flex items-center gap-4 mt-6">
-              {[1, 2, 3].map((stepNum) => {
-                // Map step 4 (crypto payment) to show as step 3 in progress
-                const currentStep = step === 4 ? 2.5 : step;
-                const isComplete = step === 3 ? stepNum <= 3 : currentStep >= stepNum;
-                const showCheck = step === 3 ? stepNum < 3 : currentStep > stepNum;
+            <div className="flex items-center gap-2 mt-6">
+              {[
+                { num: 1, label: 'Review' },
+                { num: 2, label: 'Payment' },
+                { num: 3, label: 'Complete' }
+              ].map(({ num, label }, index) => {
+                // Step 4 (MetaMask) is part of step 2 flow
+                const currentStep = step === 4 ? 2 : step;
+                const isComplete = currentStep >= num || step === 3;
+                const showCheck = currentStep > num || step === 3;
                 
                 return (
-                  <div key={stepNum} className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isComplete 
-                        ? stepNum === 3 && step === 4 ? 'bg-orange-500 text-white animate-pulse' : 'bg-primary text-white'
-                        : 'bg-gray-600 text-gray-400'
-                    }`}>
-                      {showCheck ? <Check className="h-4 w-4" /> : stepNum === 3 && step === 4 ? <Wallet className="h-4 w-4" /> : stepNum}
+                  <div key={num} className="flex items-center gap-2">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        isComplete 
+                          ? 'bg-purple-600 text-white'
+                          : isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {showCheck ? <Check className="h-4 w-4" /> : num === 2 ? <Wallet className="h-4 w-4" /> : num}
+                      </div>
                     </div>
-                    {stepNum < 3 && (
-                      <div className={`w-12 h-1 rounded ${
-                        currentStep > stepNum ? 'bg-primary' : 'bg-gray-600'
+                    {index < 2 && (
+                      <div className={`w-8 h-1 rounded ${
+                        currentStep > num || step === 3 ? 'bg-purple-600' : isDark ? 'bg-gray-700' : 'bg-gray-300'
                       }`} />
                     )}
                   </div>
@@ -214,18 +168,18 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
               >
                 {/* Ticket Summary */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Selected Tickets</h3>
+                  <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Selected Tickets</h3>
                   {selections.selections.map((selection: any, index: number) => (
-                    <Card key={selection.ticketTypeId} className="bg-card/50 border-border/50">
+                    <Card key={selection.ticketTypeId} className={isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-semibold text-white">{selection.name}</h4>
-                            <p className="text-sm text-gray-400">Quantity: {selection.quantity}</p>
+                            <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selection.name}</h4>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Quantity: {selection.quantity}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-white">₹{(selection.quantity * selection.price).toLocaleString()}</p>
-                            <p className="text-sm text-gray-400">₹{selection.price.toLocaleString()} each</p>
+                            <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{(selection.quantity * selection.price).toLocaleString()}</p>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>₹{selection.price.toLocaleString()} each</p>
                           </div>
                         </div>
                       </CardContent>
@@ -233,77 +187,59 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                   ))}
                 </div>
 
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email" className="text-white">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        className="bg-card/50 border-border/50 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone" className="text-white">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        className="bg-card/50 border-border/50 text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Price Breakdown */}
-                <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+                <Card className={isDark ? 'bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-purple-500/20' : 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'}>
                   <CardContent className="p-4 space-y-3">
-                    <h3 className="font-semibold text-white">Price Breakdown</h3>
+                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Price Breakdown</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Tickets ({selections.totalTickets})</span>
-                        <span className="text-white">₹{selections.total.toLocaleString()}</span>
+                        <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Tickets ({selections.totalTickets})</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-900'}>₹{selections.total.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Platform Fee</span>
-                        <span className="text-white">₹{fees.platform.toLocaleString()}</span>
+                        <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Platform Fee</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-900'}>₹{fees.platform.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Payment Gateway</span>
-                        <span className="text-white">₹{fees.payment.toLocaleString()}</span>
+                        <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Payment Gateway</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-900'}>₹{fees.payment.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">GST (18%)</span>
-                        <span className="text-white">₹{fees.tax.toLocaleString()}</span>
+                        <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>GST (18%)</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-900'}>₹{fees.tax.toLocaleString()}</span>
                       </div>
-                      <Separator className="bg-white/20" />
+                      <Separator className={isDark ? 'bg-white/20' : 'bg-gray-300'} />
                       <div className="flex justify-between text-lg font-bold">
-                        <span className="text-white">Total Amount</span>
-                        <span className="text-primary">₹{finalTotal.toLocaleString()}</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-900'}>Total Amount</span>
+                        <span className="text-purple-600">₹{finalTotal.toLocaleString()}</span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Email Input */}
+                <div className="space-y-2">
+                  <Label className={isDark ? 'text-white' : 'text-gray-900'}>Email for confirmation</Label>
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}
+                  />
+                </div>
+
                 <Button
                   onClick={() => setStep(2)}
-                  disabled={!email || !phone}
-                  className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white font-semibold h-12 rounded-xl"
+                  className="w-full bg-purple-600 hover:bg-purple-700 border-0 text-white font-semibold h-12 rounded-xl"
                 >
-                  Proceed to Payment
+                  Continue to Payment
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </motion.div>
             )}
 
-            {/* Step 2: Payment */}
+            {/* Step 2: Payment Method Selection */}
             {step === 2 && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -312,23 +248,23 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
               >
                 {/* Payment Methods */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Choose Payment Method</h3>
+                  <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Choose Payment Method</h3>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                     {paymentMethods.map((method) => (
                       <Card key={method.id} className={`cursor-pointer transition-all ${
                         paymentMethod === method.id 
-                          ? 'bg-primary/10 border-primary/50' 
-                          : 'bg-card/50 border-border/50 hover:border-primary/30'
+                          ? isDark ? 'bg-purple-900/30 border-purple-500/50' : 'bg-purple-50 border-purple-400'
+                          : isDark ? 'bg-gray-800/50 border-gray-700 hover:border-purple-500/30' : 'bg-gray-50 border-gray-200 hover:border-purple-300'
                       }`}>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-3">
                             <RadioGroupItem value={method.id} id={method.id} />
-                            <method.icon className="h-5 w-5 text-primary" />
+                            <method.icon className="h-5 w-5 text-purple-600" />
                             <div className="flex-1">
-                              <Label htmlFor={method.id} className="text-white font-medium cursor-pointer">
+                              <Label htmlFor={method.id} className={`font-medium cursor-pointer ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {method.name}
                               </Label>
-                              <p className="text-sm text-gray-400">{method.description}</p>
+                              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{method.description}</p>
                             </div>
                           </div>
                         </CardContent>
@@ -338,28 +274,30 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                 </div>
 
                 {/* Security Features */}
-                <Card className="bg-green-500/10 border-green-500/30">
+                <Card className={isDark ? 'bg-green-900/20 border-green-500/30' : 'bg-green-50 border-green-200'}>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-green-400" />
+                      <Shield className="h-5 w-5 text-green-500" />
                       <div>
-                        <h4 className="font-semibold text-white">Secure Payment</h4>
-                        <p className="text-sm text-gray-300">256-bit SSL encryption & PCI DSS compliant</p>
+                        <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Secure Payment</h4>
+                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {paymentMethod === 'crypto' ? 'Secured by Ethereum blockchain' : '256-bit SSL encryption & PCI DSS compliant'}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Final Amount */}
-                <Card className="bg-gradient-to-r from-primary/20 to-secondary/20 border-primary/30">
+                <Card className={isDark ? 'bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-purple-500/30' : 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-xl font-bold text-white">Total Amount</h3>
-                        <p className="text-sm text-gray-300">{selections.totalTickets} tickets</p>
+                        <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Total Amount</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{selections.totalTickets} tickets</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        <p className="text-3xl font-bold text-purple-600">
                           ₹{finalTotal.toLocaleString()}
                         </p>
                       </div>
@@ -371,20 +309,36 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                   <Button
                     variant="outline"
                     onClick={() => setStep(1)}
-                    className="flex-1 bg-card/50 border-border/50 text-white hover:bg-card/70"
+                    className={`flex-1 ${isDark ? 'bg-gray-800/50 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-900 hover:bg-gray-100'}`}
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={handlePurchase}
+                    onClick={() => {
+                      if (paymentMethod === 'crypto') {
+                        setStep(4) // Go to MetaMask payment
+                      } else {
+                        // Handle other payment methods (UPI, etc.)
+                        setProcessing(true)
+                        setTimeout(() => {
+                          setProcessing(false)
+                          setStep(3)
+                        }, 2000)
+                      }
+                    }}
                     disabled={processing}
-                    className="flex-1 gradient-purple-cyan hover:opacity-90 border-0 text-white font-semibold h-12 rounded-xl"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 border-0 text-white font-semibold h-12 rounded-xl"
                   >
                     {processing ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                         Processing...
                       </div>
+                    ) : paymentMethod === 'crypto' ? (
+                      <>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Pay with MetaMask
+                      </>
                     ) : (
                       <>
                         <Zap className="h-4 w-4 mr-2" />
@@ -403,28 +357,28 @@ export function EnhancedPurchaseDialog({ selections, eventTitle, onClose, onSucc
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center space-y-6 py-8"
               >
-                <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
-                  <Check className="h-10 w-10 text-green-400" />
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${isDark ? 'bg-green-500/20' : 'bg-green-100'}`}>
+                  <Check className="h-10 w-10 text-green-500" />
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Payment Successful!</h3>
-                  <p className="text-gray-400">Your tickets have been purchased successfully</p>
+                  <h3 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Payment Successful!</h3>
+                  <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Your tickets have been purchased successfully</p>
                 </div>
 
-                <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30">
+                <Card className={isDark ? 'bg-gradient-to-r from-green-900/20 to-emerald-900/20 border-green-500/30' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'}>
                   <CardContent className="p-4 text-left">
-                    <h4 className="font-semibold text-white mb-2">What's Next?</h4>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                    <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>What's Next?</h4>
+                    <ul className={`text-sm space-y-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                       <li>• NFT tickets will be minted to your wallet</li>
-                      <li>• Confirmation email sent to {email}</li>
+                      <li>• Confirmation email sent to {email || 'your email'}</li>
                       <li>• QR codes available in your dashboard</li>
                       <li>• Tickets can be resold on our marketplace</li>
                     </ul>
                   </CardContent>
                 </Card>
 
-                <Badge className="bg-primary/20 text-primary border-primary/30 px-4 py-2">
+                <Badge className={`px-4 py-2 ${isDark ? 'bg-purple-900/30 text-purple-400 border-purple-500/30' : 'bg-purple-100 text-purple-700 border-purple-200'}`}>
                   Transaction ID: TXN{Date.now().toString().slice(-8)}
                 </Badge>
               </motion.div>

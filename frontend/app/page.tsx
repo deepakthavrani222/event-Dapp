@@ -24,6 +24,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -44,18 +45,32 @@ export default function HomePage() {
   // Featured events for carousel (first 5)
   const featuredEvents = events.slice(0, 5)
 
-  // Auto-slide every 5 seconds
+  // Auto-slide every 5 seconds - always go forward (right to left)
   useEffect(() => {
     if (featuredEvents.length === 0) return
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % featuredEvents.length)
+      setCurrentSlide((prev) => prev + 1)
     }, 5000)
     return () => clearInterval(timer)
   }, [featuredEvents.length])
 
+  // Reset to 0 when reaching the clone (for infinite loop effect)
+  useEffect(() => {
+    if (currentSlide === featuredEvents.length && featuredEvents.length > 0) {
+      // Wait for transition to complete, then instantly jump to real first slide
+      const timeout = setTimeout(() => {
+        setIsTransitioning(true)
+        setCurrentSlide(0)
+        // Re-enable transition after instant jump
+        setTimeout(() => setIsTransitioning(false), 50)
+      }, 1000) // Match transition duration
+      return () => clearTimeout(timeout)
+    }
+  }, [currentSlide, featuredEvents.length])
+
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % featuredEvents.length)
-  }, [featuredEvents.length])
+    setCurrentSlide((prev) => prev + 1)
+  }, [])
 
   const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length)
@@ -98,112 +113,140 @@ export default function HomePage() {
       <PublicHeader />
       {/* Spacer for fixed header */}
       <div className="h-16" />
-      {/* Hero Section - District Style (Content Left, Image Right) */}
+      {/* Hero Section - District Style Horizontal Carousel */}
       <section className={`relative min-h-[500px] py-12 md:py-20 overflow-hidden ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
-        {/* Light theme - Blurred event image as background (District style) */}
+        {/* Light theme - Blurred event image as background */}
         {!isDark && featuredEvents.length > 0 && (
           <>
-            {/* Blurred background image */}
             <div 
-              className="absolute inset-0 bg-cover bg-center scale-110 blur-3xl opacity-40"
-              style={{ backgroundImage: `url(${getEventImage(featuredEvents[currentSlide])})` }}
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-3xl opacity-40 transition-all duration-700"
+              style={{ backgroundImage: `url(${getEventImage(featuredEvents[currentSlide % featuredEvents.length])})` }}
             />
-            {/* Soft gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA]/60 via-transparent to-[#FAFAFA]/80" />
-            {/* Side fade to white */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#FAFAFA]/70 via-transparent to-[#FAFAFA]/70" />
           </>
         )}
         
         <div className="container px-6 md:px-12 mx-auto max-w-7xl relative z-10">
-          <AnimatePresence mode="wait">
-            {featuredEvents.length > 0 && (
-              <motion.div
-                key={currentSlide}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center"
-              >
-                {/* Left Side - Content */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="space-y-4 order-2 lg:order-1"
-                >
-                  {/* Date & Time */}
-                  <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {new Date(featuredEvents[currentSlide].date).toLocaleDateString('en-IN', { 
-                      weekday: 'short', day: 'numeric', month: 'short'
-                    })}, {featuredEvents[currentSlide].time || '7:00 PM'}
-                  </p>
+          {/* Carousel Container */}
+          <div className="relative overflow-hidden">
+            {/* Slides Track - moves horizontally */}
+            <div 
+              className={`flex ${isTransitioning ? '' : 'transition-transform duration-1000 ease-out'}`}
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {featuredEvents.map((event, index) => (
+                <div key={event.id || index} className="w-full flex-shrink-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                    {/* Left Side - Content */}
+                    <div className="space-y-4 order-2 lg:order-1">
+                      {/* Date & Time */}
+                      <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {new Date(event.date).toLocaleDateString('en-IN', { 
+                          weekday: 'short', day: 'numeric', month: 'short'
+                        })}, {event.time || '7:00 PM'}
+                      </p>
 
-                  {/* Title */}
-                  <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {featuredEvents[currentSlide].title}
-                  </h1>
+                      {/* Title */}
+                      <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {event.title}
+                      </h1>
 
-                  {/* Venue */}
-                  <p className={`text-base md:text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {typeof featuredEvents[currentSlide].venue === 'object' 
-                      ? `${featuredEvents[currentSlide].venue?.name || ''}${featuredEvents[currentSlide].venue?.city ? `, ${featuredEvents[currentSlide].venue.city}` : (featuredEvents[currentSlide].city ? `, ${featuredEvents[currentSlide].city}` : '')}`
-                      : `${featuredEvents[currentSlide].venue || ''}${featuredEvents[currentSlide].city ? `, ${featuredEvents[currentSlide].city}` : ''}`
-                    }
-                  </p>
+                      {/* Venue */}
+                      <p className={`text-base md:text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {typeof event.venue === 'object' 
+                          ? `${event.venue?.name || ''}${event.venue?.city ? `, ${event.venue.city}` : (event.city ? `, ${event.city}` : '')}`
+                          : `${event.venue || ''}${event.city ? `, ${event.city}` : ''}`
+                        }
+                      </p>
 
-                  {/* Price */}
-                  <p className={`text-lg font-medium ${isDark ? 'text-[#A78BFA]' : 'text-[#E23744]'}`}>
-                    ₹{featuredEvents[currentSlide].price?.toLocaleString('en-IN')} onwards
-                  </p>
+                      {/* Price */}
+                      <p className={`text-lg font-medium ${isDark ? 'text-[#A78BFA]' : 'text-[#E23744]'}`}>
+                        ₹{event.price?.toLocaleString('en-IN')} onwards
+                      </p>
 
-                  {/* Book Button */}
-                  <div className="pt-2">
-                    <Link href={`/event/${featuredEvents[currentSlide].id}`}>
-                      <Button
-                        size="lg"
-                        className={`h-12 px-8 rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${
-                          isDark 
-                            ? 'bg-white text-black hover:bg-gray-100' 
-                            : 'bg-[#1a1a1a] text-white hover:bg-black'
-                        }`}
-                      >
-                        Book tickets
-                      </Button>
-                    </Link>
-                  </div>
-                </motion.div>
+                      {/* Book Button */}
+                      <div className="pt-2">
+                        <Link href={`/event/${event.id}`}>
+                          <Button
+                            size="lg"
+                            className={`h-12 px-8 rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${
+                              isDark 
+                                ? 'bg-white text-black hover:bg-gray-100' 
+                                : 'bg-[#1a1a1a] text-white hover:bg-black'
+                            }`}
+                          >
+                            Book tickets
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
 
-                {/* Right Side - Event Image Card */}
-                <motion.div
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="relative order-1 lg:order-2 flex justify-center lg:justify-end"
-                >
-                  <div className={`relative w-full max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${
-                    isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'
-                  }`}>
-                    <img
-                      src={getEventImage(featuredEvents[currentSlide])}
-                      alt={featuredEvents[currentSlide].title}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Subtle gradient overlay at bottom */}
-                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
-                    
-                    {/* Category badge on image */}
-                    <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${
-                      isDark ? 'bg-[#A78BFA] text-white' : 'bg-white/90 text-gray-900'
-                    }`}>
-                      {featuredEvents[currentSlide].category || 'Event'}
+                    {/* Right Side - Event Image Card */}
+                    <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
+                      <div className={`relative w-full max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${
+                        isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'
+                      }`}>
+                        <img
+                          src={getEventImage(event)}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${
+                          isDark ? 'bg-[#A78BFA] text-white' : 'bg-white/90 text-gray-900'
+                        }`}>
+                          {event.category || 'Event'}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </div>
+              ))}
+              {/* Clone of first slide for infinite loop */}
+              {featuredEvents.length > 0 && (
+                <div key="clone-first" className="w-full flex-shrink-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                    <div className="space-y-4 order-2 lg:order-1">
+                      <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {new Date(featuredEvents[0].date).toLocaleDateString('en-IN', { 
+                          weekday: 'short', day: 'numeric', month: 'short'
+                        })}, {featuredEvents[0].time || '7:00 PM'}
+                      </p>
+                      <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {featuredEvents[0].title}
+                      </h1>
+                      <p className={`text-base md:text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {typeof featuredEvents[0].venue === 'object' 
+                          ? `${featuredEvents[0].venue?.name || ''}${featuredEvents[0].venue?.city ? `, ${featuredEvents[0].venue.city}` : ''}`
+                          : `${featuredEvents[0].venue || ''}${featuredEvents[0].city ? `, ${featuredEvents[0].city}` : ''}`
+                        }
+                      </p>
+                      <p className={`text-lg font-medium ${isDark ? 'text-[#A78BFA]' : 'text-[#E23744]'}`}>
+                        ₹{featuredEvents[0].price?.toLocaleString('en-IN')} onwards
+                      </p>
+                      <div className="pt-2">
+                        <Link href={`/event/${featuredEvents[0].id}`}>
+                          <Button size="lg" className={`h-12 px-8 rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${isDark ? 'bg-white text-black hover:bg-gray-100' : 'bg-[#1a1a1a] text-white hover:bg-black'}`}>
+                            Book tickets
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
+                      <div className={`relative w-full max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'}`}>
+                        <img src={getEventImage(featuredEvents[0])} alt={featuredEvents[0].title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${isDark ? 'bg-[#A78BFA] text-white' : 'bg-white/90 text-gray-900'}`}>
+                          {featuredEvents[0].category || 'Event'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Dots Indicator - Below content */}
           {featuredEvents.length > 1 && (
@@ -213,7 +256,7 @@ export default function HomePage() {
                   key={index}
                   onClick={() => setCurrentSlide(index)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    index === currentSlide 
+                    index === (currentSlide % featuredEvents.length)
                       ? isDark ? 'bg-[#A78BFA] w-8' : 'bg-[#1a1a1a] w-8'
                       : isDark ? 'bg-gray-600 w-2 hover:bg-gray-500' : 'bg-gray-300 w-2 hover:bg-gray-400'
                   }`}
@@ -228,23 +271,19 @@ export default function HomePage() {
           <>
             <button
               onClick={prevSlide}
-              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all z-20 ${
-                isDark 
-                  ? 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20' 
-                  : 'bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 hover:bg-white shadow-lg'
+              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-2 transition-all z-20 ${
+                isDark ? 'text-white hover:text-gray-300' : 'text-gray-700 hover:text-gray-900'
               }`}
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-8 w-8" />
             </button>
             <button
               onClick={nextSlide}
-              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all z-20 ${
-                isDark 
-                  ? 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20' 
-                  : 'bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 hover:bg-white shadow-lg'
+              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-2 transition-all z-20 ${
+                isDark ? 'text-white hover:text-gray-300' : 'text-gray-700 hover:text-gray-900'
               }`}
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-8 w-8" />
             </button>
           </>
         )}

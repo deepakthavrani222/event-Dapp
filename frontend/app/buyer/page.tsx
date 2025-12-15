@@ -6,17 +6,10 @@ import { EnhancedEventCarousel } from '@/components/shared/enhanced-event-carous
 import { IntegratedArtistHub } from '@/components/shared/integrated-artist-hub';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Footer } from '@/components/shared/footer';
-import { 
-  ChevronRight,
-  Ticket,
-  TrendingUp,
-  Star,
-  Zap
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Ticket } from 'lucide-react';
 import type { Event } from '@/lib/types';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 
 
@@ -25,6 +18,8 @@ import type { Event } from '@/lib/types';
 export default function BuyerDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     fetchEvents();
@@ -57,48 +52,75 @@ export default function BuyerDashboard() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Hero Section for Buyer */}
-      <section className="relative py-12 overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-background to-cyan-500/5" />
-        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl" />
+      {/* Hero Section - District Style */}
+      <section className="relative py-16 overflow-hidden min-h-[420px]">
+        {/* Background with gradient blur */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1920&q=80"
+            alt="Concert crowd"
+            className="w-full h-full object-cover"
+          />
+          {/* Soft gradient overlay */}
+          <div className={`absolute inset-0 ${isDark 
+            ? 'bg-gradient-to-r from-black/80 via-black/50 to-transparent' 
+            : 'bg-gradient-to-r from-white/95 via-white/80 to-white/40'}`} 
+          />
+        </div>
 
         <div className="container relative z-10 px-12 mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-4 mb-8"
-          >
-            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2">
-              <Ticket className="h-4 w-4 mr-2" />
-              Your Personal Event Hub
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-black text-white">
-              Discover <span className="text-gradient-neon">Amazing Events</span>
-            </h1>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Browse, buy, and manage your tickets. All in one place.
+          <div className="max-w-2xl py-8">
+            {/* Small label */}
+            <p className={`text-base font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+              Live Events, Concerts & More
             </p>
-          </motion.div>
-
-
+            
+            {/* Main Title - District Style Bold */}
+            <h1 
+              className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}
+              style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', letterSpacing: '-0.02em' }}
+            >
+              Discover Amazing Events | Your City
+            </h1>
+            
+            {/* Subtitle */}
+            <p 
+              className={`text-lg mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+              style={{ fontFamily: 'Inter, sans-serif' }}
+            >
+              Browse concerts, comedy shows, workshops and more
+            </p>
+            
+            {/* Price hint */}
+            <p className={`text-base font-medium mb-4 ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>
+              ₹299 onwards
+            </p>
+            
+            {/* CTA Button - District Style */}
+            <Button
+              onClick={() => document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-[#1C1C1C] hover:bg-[#2C2C2C] text-white px-8 py-3 rounded-lg font-medium text-base"
+              style={{ fontFamily: 'Inter, sans-serif' }}
+            >
+              Explore events
+            </Button>
+          </div>
         </div>
       </section>
 
 
 
       {/* Events Grid */}
-      <section className="container py-8 px-12 mx-auto max-w-7xl space-y-12">
+      <section id="events-section" className="container py-8 px-12 mx-auto max-w-7xl space-y-12">
         {loading ? (
           <div className="text-center py-12 text-gray-400">Loading events...</div>
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <div className={`w-24 h-24 mx-auto ${isDark ? 'bg-white/5' : 'bg-gray-100'} rounded-full flex items-center justify-center mb-6`}>
               <Ticket className="h-12 w-12 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">No events found</h3>
-            <p className="text-gray-400 mb-6">Try refreshing the page</p>
+            <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>No events found</h3>
+            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} mb-6`}>Try refreshing the page</p>
             <Button 
               onClick={() => window.location.reload()}
               className="gradient-purple-cyan hover:opacity-90 border-0 text-white"
@@ -159,30 +181,6 @@ export default function BuyerDashboard() {
             )}
           </>
         )}
-      </section>
-
-      {/* Quick Stats */}
-      <section className="container py-12 px-12 mx-auto max-w-7xl">
-        <div className="glass-card border-white/20 bg-white/5 backdrop-blur-sm rounded-2xl p-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <p className="text-3xl font-bold text-white">50K+</p>
-              <p className="text-sm text-gray-400">Happy Users</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">1000+</p>
-              <p className="text-sm text-gray-400">Events Hosted</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">99.9%</p>
-              <p className="text-sm text-gray-400">Secure Tickets</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">24/7</p>
-              <p className="text-sm text-gray-400">Support</p>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Footer */}

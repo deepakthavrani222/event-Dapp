@@ -1,1 +1,480 @@
-[00:00:06.763] Server  LOG      ✓ Ready in 5.4s
+[00:00:06.335] Server  LOG      ✓ Ready in 5.2s
+[00:00:09.498] Server  LOG      ○ Compiling / ...
+[00:00:20.432] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:21.183] Browser LOG     Getting token from localStorage: true
+[00:00:21.183] Browser LOG     Adding Authorization header with token
+[00:00:21.183] Browser LOG     Getting token from localStorage: true
+[00:00:21.183] Browser LOG     Adding Authorization header with token
+[00:00:21.417] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:21.417] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:00:21.417] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796617556}
+[00:00:29.455] Browser LOG     Getting token from localStorage: false
+[00:00:29.455] Browser LOG     No token available for Authorization header
+[00:00:34.112] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796630210}
+[00:00:38.775] Browser LOG     Getting token from localStorage: false
+[00:00:38.775] Browser LOG     No token available for Authorization header
+[00:00:39.564] Browser LOG     Login successful, saving token: true
+[00:00:39.564] Browser LOG     User logged in: {"email":"organizer@test.com","id":"693816dcc58d9afb5c556c34","name":"Guest User","role":"ORGANIZER","walletAddress":"0xe4C68AEE0E5bD62fBc1C456BE1EDBcEa6975D17B"}
+[00:00:42.601] Server  LOG      ○ Compiling /organizer ...
+[00:00:46.162] Server  WARN     ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:00:48.000] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:48.407] Browser LOG     Getting token from localStorage: true
+[00:00:48.407] Browser LOG     Adding Authorization header with token
+[00:00:48.407] Browser LOG     Getting token from localStorage: true
+[00:00:48.407] Browser LOG     Adding Authorization header with token
+[00:00:48.407] Browser LOG     Getting token from localStorage: true
+[00:00:48.407] Browser LOG     Adding Authorization header with token
+[00:00:48.407] Browser LOG     Getting token from localStorage: true
+[00:00:48.407] Browser LOG     Adding Authorization header with token
+[00:00:48.528] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:48.528] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer","route":"/organizer"}
+[00:00:48.528] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796644682}
+[00:00:50.029] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:00:50.029] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:01:01.497] Browser LOG     Getting token from localStorage: true
+[00:01:01.497] Browser LOG     Adding Authorization header with token
+[00:01:01.497] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/earnings color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/earnings","o":"http://localhost:3002/organizer/earnings","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796657501}
+[00:01:10.299] Server  LOG      ○ Compiling /organizer/create ...
+[00:01:18.343] Browser LOG     Getting token from localStorage: true
+[00:01:18.343] Browser LOG     Adding Authorization header with token
+[00:01:34.600] Browser LOG     Getting token from localStorage: true
+[00:01:34.600] Browser LOG     Adding Authorization header with token
+[00:01:34.600] Browser LOG     Getting token from localStorage: true
+[00:01:34.600] Browser LOG     Adding Authorization header with token
+[00:01:34.600] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796690751}
+[00:01:34.992] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:01:34.992] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:01:36.430] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:36.872] Browser LOG     Getting token from localStorage: true
+[00:01:36.872] Browser LOG     Adding Authorization header with token
+[00:01:36.872] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:36.872] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:01:36.872] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796693031}
+[00:01:37.500] Browser LOG     Getting token from localStorage: true
+[00:01:37.500] Browser LOG     Adding Authorization header with token
+[00:01:37.500] Browser LOG     Getting token from localStorage: true
+[00:01:37.500] Browser LOG     Adding Authorization header with token
+[00:01:37.500] Browser LOG     Getting token from localStorage: true
+[00:01:37.500] Browser LOG     Adding Authorization header with token
+[00:01:37.500] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796693620}
+[00:01:37.912] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:01:37.912] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:01:46.061] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:46.405] Browser LOG     Getting token from localStorage: true
+[00:01:46.405] Browser LOG     Adding Authorization header with token
+[00:01:46.405] Browser LOG     Getting token from localStorage: true
+[00:01:46.405] Browser LOG     Adding Authorization header with token
+[00:01:46.796] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:46.796] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:01:46.796] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796702950}
+[00:01:50.990] Browser LOG     Getting token from localStorage: false
+[00:01:50.990] Browser LOG     No token available for Authorization header
+[00:01:53.248] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796709402}
+[00:02:00.340] Browser LOG     Getting token from localStorage: false
+[00:02:00.340] Browser LOG     No token available for Authorization header
+[00:02:00.420] Browser LOG     Login successful, saving token: true
+[00:02:00.420] Browser LOG     User logged in: {"email":"admin@example.com","id":"693bfc1d8cfe7760e245900c","name":"Guest User","role":"ADMIN","walletAddress":"0xA6E085d272D56d42fe749Dd0aC4170F5A53C203d"}
+[00:02:04.036] Server  LOG      ○ Compiling /admin ...
+[00:02:05.155] Server  WARN     ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:02:06.281] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:06.657] Browser LOG     Getting token from localStorage: true
+[00:02:06.657] Browser LOG     Adding Authorization header with token
+[00:02:06.658] Browser LOG     Getting token from localStorage: true
+[00:02:06.658] Browser LOG     Adding Authorization header with token
+[00:02:06.658] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:06.658] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:02:06.658] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796722738}
+[00:02:06.658] Browser LOG     Getting token from localStorage: true
+[00:02:06.658] Browser LOG     Adding Authorization header with token
+[00:02:07.450] Browser LOG     Getting token from localStorage: true
+[00:02:07.450] Browser LOG     Adding Authorization header with token
+[00:02:19.061] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:19.396] Browser LOG     Getting token from localStorage: true
+[00:02:19.396] Browser LOG     Adding Authorization header with token
+[00:02:19.396] Browser LOG     Getting token from localStorage: true
+[00:02:19.396] Browser LOG     Adding Authorization header with token
+[00:02:19.868] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:19.868] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:02:19.868] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796736021}
+[00:02:24.636] Browser LOG     Getting token from localStorage: false
+[00:02:24.636] Browser LOG     No token available for Authorization header
+[00:02:26.809] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796742967}
+[00:02:32.180] Browser LOG     Getting token from localStorage: false
+[00:02:32.180] Browser LOG     No token available for Authorization header
+[00:02:32.182] Browser LOG     Login successful, saving token: true
+[00:02:32.182] Browser LOG     User logged in: {"email":"organizer@test.com","id":"693816dcc58d9afb5c556c34","name":"Guest User","role":"ORGANIZER","walletAddress":"0xe4C68AEE0E5bD62fBc1C456BE1EDBcEa6975D17B"}
+[00:02:34.517] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:34.890] Browser LOG     Getting token from localStorage: true
+[00:02:34.890] Browser LOG     Adding Authorization header with token
+[00:02:34.890] Browser LOG     Getting token from localStorage: true
+[00:02:34.890] Browser LOG     Adding Authorization header with token
+[00:02:34.890] Browser LOG     Getting token from localStorage: true
+[00:02:34.890] Browser LOG     Adding Authorization header with token
+[00:02:34.890] Browser LOG     Getting token from localStorage: true
+[00:02:34.890] Browser LOG     Adding Authorization header with token
+[00:02:35.036] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:35.036] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer","route":"/organizer"}
+[00:02:35.036] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796751153}
+[00:02:35.454] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:02:35.454] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:02:48.105] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:48.105] Browser LOG     Getting token from localStorage: true
+[00:02:48.105] Browser LOG     Adding Authorization header with token
+[00:02:48.105] Browser LOG     Getting token from localStorage: true
+[00:02:48.105] Browser LOG     Adding Authorization header with token
+[00:02:48.105] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:48.105] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:02:48.105] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796764041}
+[00:02:48.400] Browser LOG     Getting token from localStorage: true
+[00:02:48.400] Browser LOG     Adding Authorization header with token
+[00:02:48.400] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796764544}
+[00:02:54.871] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:55.227] Browser LOG     Getting token from localStorage: true
+[00:02:55.228] Browser LOG     Adding Authorization header with token
+[00:02:55.228] Browser LOG     Getting token from localStorage: true
+[00:02:55.228] Browser LOG     Adding Authorization header with token
+[00:02:55.443] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:55.443] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:02:55.443] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796771594}
+[00:02:55.841] Browser LOG     Getting token from localStorage: true
+[00:02:55.841] Browser LOG     Adding Authorization header with token
+[00:02:55.841] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796771956}
+[00:03:05.510] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:05.903] Browser LOG     Getting token from localStorage: true
+[00:03:05.903] Browser LOG     Adding Authorization header with token
+[00:03:05.903] Browser LOG     Getting token from localStorage: true
+[00:03:05.903] Browser LOG     Adding Authorization header with token
+[00:03:06.510] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:03:06.510] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:03:06.510] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796782669}
+[00:03:06.936] Browser LOG     Getting token from localStorage: true
+[00:03:06.936] Browser LOG     Adding Authorization header with token
+[00:03:06.936] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796783046}
+[00:05:08.084] Server  LOG      ○ Compiling /_not-found ...
+[00:05:51.362] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:51.362] Browser LOG     Getting token from localStorage: true
+[00:05:51.362] Browser LOG     Adding Authorization header with token
+[00:05:51.363] Browser LOG     Getting token from localStorage: true
+[00:05:51.363] Browser LOG     Adding Authorization header with token
+[00:05:51.363] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:05:51.363] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:05:51.363] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796947000}
+[00:05:52.734] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:53.713] Browser LOG     Getting token from localStorage: true
+[00:05:53.713] Browser LOG     Adding Authorization header with token
+[00:05:53.713] Browser LOG     Getting token from localStorage: true
+[00:05:53.713] Browser LOG     Adding Authorization header with token
+[00:05:53.713] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:05:53.713] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:05:53.713] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796949241}
+[00:05:56.338] Browser LOG     Getting token from localStorage: false
+[00:05:56.338] Browser LOG     No token available for Authorization header
+[00:05:58.355] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796954498}
+[00:06:04.807] Browser LOG     Getting token from localStorage: false
+[00:06:04.808] Browser LOG     No token available for Authorization header
+[00:06:04.808] Browser LOG     Login successful, saving token: true
+[00:06:04.808] Browser LOG     User logged in: {"email":"admin@example.com","id":"693bfc1d8cfe7760e245900c","name":"Guest User","role":"ADMIN","walletAddress":"0xA6E085d272D56d42fe749Dd0aC4170F5A53C203d"}
+[00:06:06.211] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:06.546] Browser LOG     Getting token from localStorage: true
+[00:06:06.546] Browser LOG     Adding Authorization header with token
+[00:06:06.546] Browser LOG     Getting token from localStorage: true
+[00:06:06.546] Browser LOG     Adding Authorization header with token
+[00:06:06.546] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:06:06.546] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:06:06.546] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796962651}
+[00:06:06.546] Browser LOG     Getting token from localStorage: true
+[00:06:06.546] Browser LOG     Adding Authorization header with token
+[00:06:06.719] Browser LOG     Getting token from localStorage: true
+[00:06:06.719] Browser LOG     Adding Authorization header with token
+[00:06:09.885] Browser LOG     Getting token from localStorage: true
+[00:06:09.885] Browser LOG     Adding Authorization header with token
+[00:06:15.329] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:15.681] Browser LOG     Getting token from localStorage: true
+[00:06:15.681] Browser LOG     Adding Authorization header with token
+[00:06:15.681] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:06:15.681] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:06:15.681] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796971823}
+[00:06:16.029] Browser LOG     Getting token from localStorage: true
+[00:06:16.029] Browser LOG     Adding Authorization header with token
+[00:06:16.029] Browser LOG     Getting token from localStorage: true
+[00:06:16.029] Browser LOG     Adding Authorization header with token
+[00:06:16.029] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796972152}
+[00:06:16.337] Browser LOG     Getting token from localStorage: true
+[00:06:16.337] Browser LOG     Adding Authorization header with token
+[00:06:19.489] Browser LOG     Getting token from localStorage: true
+[00:06:19.489] Browser LOG     Adding Authorization header with token
+[00:06:20.013] Browser LOG     Getting token from localStorage: true
+[00:06:20.013] Browser LOG     Adding Authorization header with token
+[00:06:20.013] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765796976100}
+[00:06:25.108] Browser LOG     Getting token from localStorage: false
+[00:06:25.109] Browser LOG     No token available for Authorization header
+[00:06:44.091] Browser LOG     Getting token from localStorage: false
+[00:06:44.092] Browser LOG     No token available for Authorization header
+[00:06:44.092] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797000149}
+[00:06:44.092] Browser ERROR   API Error: {}
+[00:06:44.228] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login?redirect=/admin color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login?redirect=/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797000383}
+[00:06:51.150] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:51.638] Browser LOG     Getting token from localStorage: false
+[00:06:51.638] Browser LOG     No token available for Authorization header
+[00:06:52.151] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:06:52.151] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:06:52.151] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797008305}
+[00:06:55.682] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797011830}
+[00:07:00.607] Browser LOG     Getting token from localStorage: false
+[00:07:00.607] Browser LOG     No token available for Authorization header
+[00:07:00.607] Browser LOG     Login successful, saving token: true
+[00:07:00.607] Browser LOG     User logged in: {"email":"organizer@test.com","id":"693816dcc58d9afb5c556c34","name":"Guest User","role":"ORGANIZER","walletAddress":"0xe4C68AEE0E5bD62fBc1C456BE1EDBcEa6975D17B"}
+[00:07:03.362] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:07:03.895] Browser LOG     Getting token from localStorage: true
+[00:07:03.895] Browser LOG     Adding Authorization header with token
+[00:07:03.895] Browser LOG     Getting token from localStorage: true
+[00:07:03.895] Browser LOG     Adding Authorization header with token
+[00:07:03.895] Browser LOG     Getting token from localStorage: true
+[00:07:03.895] Browser LOG     Adding Authorization header with token
+[00:07:03.895] Browser LOG     Getting token from localStorage: true
+[00:07:03.895] Browser LOG     Adding Authorization header with token
+[00:07:04.015] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:07:04.016] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer","route":"/organizer"}
+[00:07:04.016] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797020170}
+[00:07:04.717] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:07:04.717] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:07:20.907] Server  LOG      ○ Compiling /organizer/create ...
+[00:07:22.442] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/create color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/create","o":"http://localhost:3002/organizer/create","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797038298}
+[00:07:33.810] Browser LOG     Getting token from localStorage: true
+[00:07:33.811] Browser LOG     Adding Authorization header with token
+[00:07:33.811] Browser LOG     Getting token from localStorage: true
+[00:07:47.295] Browser LOG     Image uploaded successfully: https://res.cloudinary.com/dnfzyqgcw/image/upload/v1765797062/ticketchain/events/event_1765797051824_epke0l.jpg
+[00:08:03.782] Browser LOG     Getting token from localStorage: true
+[00:08:03.782] Browser LOG     Adding Authorization header with token
+[00:08:34.721] Browser LOG     Getting token from localStorage: true
+[00:08:34.721] Browser LOG     Adding Authorization header with token
+[00:09:04.722] Browser LOG     Getting token from localStorage: true
+[00:09:04.722] Browser LOG     Adding Authorization header with token
+[00:09:33.769] Browser LOG     Getting token from localStorage: true
+[00:09:33.769] Browser LOG     Adding Authorization header with token
+[00:09:51.846] Server  LOG      ○ Compiling /_not-found ...
+[00:10:04.721] Browser LOG     Getting token from localStorage: true
+[00:10:04.721] Browser LOG     Adding Authorization header with token
+[00:10:19.221] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:19.592] Browser LOG     Getting token from localStorage: true
+[00:10:19.592] Browser LOG     Adding Authorization header with token
+[00:10:19.592] Browser LOG     Getting token from localStorage: true
+[00:10:19.592] Browser LOG     Adding Authorization header with token
+[00:10:19.705] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:10:19.705] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/admin","route":"/admin"}
+[00:10:19.705] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3002/admin","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797215855}
+[00:10:20.611] Browser LOG     Getting token from localStorage: true
+[00:10:20.611] Browser LOG     Adding Authorization header with token
+[00:10:20.611] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797216689}
+[00:10:22.693] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:23.711] Browser LOG     Getting token from localStorage: true
+[00:10:23.711] Browser LOG     Adding Authorization header with token
+[00:10:23.711] Browser LOG     Getting token from localStorage: true
+[00:10:23.711] Browser LOG     Adding Authorization header with token
+[00:10:23.711] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:10:23.711] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer/create","route":"/organizer/create"}
+[00:10:23.711] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/create color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/create","o":"http://localhost:3002/organizer/create","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797219366}
+[00:10:27.467] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:28.175] Browser LOG     Getting token from localStorage: true
+[00:10:28.175] Browser LOG     Adding Authorization header with token
+[00:10:28.175] Browser LOG     Getting token from localStorage: true
+[00:10:28.175] Browser LOG     Adding Authorization header with token
+[00:10:28.175] Browser LOG     Getting token from localStorage: true
+[00:10:28.175] Browser LOG     Adding Authorization header with token
+[00:10:28.175] Browser LOG     Getting token from localStorage: true
+[00:10:28.175] Browser LOG     Adding Authorization header with token
+[00:10:28.627] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:10:28.627] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:10:28.945] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:10:28.946] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer","route":"/organizer"}
+[00:10:28.946] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797225099}
+[00:10:32.726] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/create color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/create","o":"http://localhost:3002/organizer/create","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797228811}
+[00:10:54.714] Browser LOG     Getting token from localStorage: true
+[00:10:54.714] Browser LOG     Adding Authorization header with token
+[00:10:59.722] Browser LOG     Getting token from localStorage: true
+[00:10:59.722] Browser LOG     Adding Authorization header with token
+[00:11:24.708] Browser LOG     Getting token from localStorage: true
+[00:11:24.708] Browser LOG     Adding Authorization header with token
+[00:11:28.887] Browser LOG     Getting token from localStorage: true
+[00:11:28.887] Browser LOG     Adding Authorization header with token
+[00:11:54.712] Browser LOG     Getting token from localStorage: true
+[00:11:54.712] Browser LOG     Adding Authorization header with token
+[00:11:59.719] Browser LOG     Getting token from localStorage: true
+[00:11:59.719] Browser LOG     Adding Authorization header with token
+[00:12:24.717] Browser LOG     Getting token from localStorage: true
+[00:12:24.717] Browser LOG     Adding Authorization header with token
+[00:12:29.710] Browser LOG     Getting token from localStorage: true
+[00:12:29.710] Browser LOG     Adding Authorization header with token
+[00:12:54.713] Browser LOG     Getting token from localStorage: true
+[00:12:54.713] Browser LOG     Adding Authorization header with token
+[00:12:59.722] Browser LOG     Getting token from localStorage: true
+[00:12:59.722] Browser LOG     Adding Authorization header with token
+[00:13:40.881] Browser LOG     Getting token from localStorage: true
+[00:13:40.881] Browser LOG     Adding Authorization header with token
+[00:13:40.881] Browser ERROR   A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components
+[00:13:44.179] Browser LOG     Getting token from localStorage: true
+[00:13:44.179] Browser LOG     Adding Authorization header with token
+[00:13:55.720] Browser LOG     Getting token from localStorage: true
+[00:13:55.720] Browser LOG     Adding Authorization header with token
+[00:14:10.205] Browser LOG     Getting token from localStorage: true
+[00:14:10.205] Browser LOG     Adding Authorization header with token
+[00:14:21.676] Browser LOG     Getting token from localStorage: true
+[00:14:21.676] Browser LOG     Adding Authorization header with token
+[00:14:21.676] Browser LOG     Getting token from localStorage: true
+[00:14:21.676] Browser LOG     Adding Authorization header with token
+[00:14:21.676] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797457810}
+[00:14:22.098] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:14:22.098] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:14:27.849] Browser LOG     Getting token from localStorage: true
+[00:14:27.849] Browser LOG     Adding Authorization header with token
+[00:14:33.472] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:33.824] Browser LOG     Getting token from localStorage: true
+[00:14:33.824] Browser LOG     Adding Authorization header with token
+[00:14:33.824] Browser LOG     Getting token from localStorage: true
+[00:14:33.824] Browser LOG     Adding Authorization header with token
+[00:14:33.964] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:14:33.964] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:14:33.964] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797470104}
+[00:14:35.580] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:36.725] Browser LOG     Getting token from localStorage: true
+[00:14:36.725] Browser LOG     Adding Authorization header with token
+[00:14:36.725] Browser LOG     Getting token from localStorage: true
+[00:14:36.725] Browser LOG     Adding Authorization header with token
+[00:14:36.725] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:14:36.725] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer/create","route":"/organizer/create"}
+[00:14:36.725] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/create color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/create","o":"http://localhost:3002/organizer/create","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797472142}
+[00:14:41.118] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:41.735] Browser LOG     Getting token from localStorage: true
+[00:14:41.735] Browser LOG     Adding Authorization header with token
+[00:14:41.735] Browser LOG     Getting token from localStorage: true
+[00:14:41.735] Browser LOG     Adding Authorization header with token
+[00:14:41.736] Browser LOG     Getting token from localStorage: true
+[00:14:41.736] Browser LOG     Adding Authorization header with token
+[00:14:41.736] Browser LOG     Getting token from localStorage: true
+[00:14:41.736] Browser LOG     Adding Authorization header with token
+[00:14:42.421] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:14:42.421] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:14:42.532] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:14:42.532] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer","route":"/organizer"}
+[00:14:42.532] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797478687}
+[00:15:07.715] Browser LOG     Getting token from localStorage: true
+[00:15:07.715] Browser LOG     Adding Authorization header with token
+[00:15:11.490] Browser LOG     Getting token from localStorage: true
+[00:15:11.490] Browser LOG     Adding Authorization header with token
+[00:15:16.132] Server  LOG      ○ Compiling /organizer/settings ...
+[00:15:18.325] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/settings color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/settings","o":"http://localhost:3002/organizer/settings","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797514392}
+[00:15:22.070] Browser LOG     Getting token from localStorage: true
+[00:15:22.070] Browser LOG     Adding Authorization header with token
+[00:15:22.070] Browser LOG     Getting token from localStorage: true
+[00:15:22.070] Browser LOG     Adding Authorization header with token
+[00:15:22.070] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer color: rgb(120, 120, 120) color: inherit {"dp":"/organizer","o":"http://localhost:3002/organizer","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797518169}
+[00:15:22.289] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:15:22.289] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(300) or minHeight(200) or use aspect(undefined) to control the
+       height and width.
+[00:15:26.740] Browser LOG     Getting token from localStorage: true
+[00:15:26.740] Browser LOG     Adding Authorization header with token
+[00:15:26.740] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/events?status=approved color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/events","o":"http://localhost:3002/organizer/events?status=approved","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797522774}
+[00:15:37.709] Browser LOG     Getting token from localStorage: true
+[00:15:37.709] Browser LOG     Adding Authorization header with token
+[00:15:42.713] Browser LOG     Getting token from localStorage: true
+[00:15:42.713] Browser LOG     Adding Authorization header with token
+[00:16:07.715] Browser LOG     Getting token from localStorage: true
+[00:16:07.715] Browser LOG     Adding Authorization header with token
+[00:16:11.825] Browser LOG     Getting token from localStorage: true
+[00:16:11.825] Browser LOG     Adding Authorization header with token
+[00:16:21.269] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:16:21.537] Browser LOG     Getting token from localStorage: true
+[00:16:21.537] Browser LOG     Adding Authorization header with token
+[00:16:21.537] Browser LOG     Getting token from localStorage: true
+[00:16:21.537] Browser LOG     Adding Authorization header with token
+[00:16:22.106] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:16:22.107] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:16:22.107] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797578244}
+[00:16:23.074] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:16:23.721] Browser LOG     Getting token from localStorage: true
+[00:16:23.721] Browser LOG     Adding Authorization header with token
+[00:16:23.721] Browser LOG     Getting token from localStorage: true
+[00:16:23.721] Browser LOG     Adding Authorization header with token
+[00:16:23.721] Browser LOG     Getting token from localStorage: true
+[00:16:23.721] Browser LOG     Adding Authorization header with token
+[00:16:23.721] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:16:23.721] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/organizer/events","route":"/organizer/events"}
+[00:16:23.721] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/organizer/events?status=approved color: rgb(120, 120, 120) color: inherit {"dp":"/organizer/events","o":"http://localhost:3002/organizer/events?status=approved","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797579684}
+[00:16:54.033] Browser LOG     Getting token from localStorage: true
+[00:16:54.033] Browser LOG     Adding Authorization header with token
+[00:17:24.715] Browser LOG     Getting token from localStorage: true
+[00:17:24.715] Browser LOG     Adding Authorization header with token
+[00:17:54.718] Browser LOG     Getting token from localStorage: true
+[00:17:54.718] Browser LOG     Adding Authorization header with token
+[00:18:24.710] Browser LOG     Getting token from localStorage: true
+[00:18:24.710] Browser LOG     Adding Authorization header with token
+[00:18:54.708] Browser LOG     Getting token from localStorage: true
+[00:18:54.708] Browser LOG     Adding Authorization header with token
+[00:19:24.711] Browser LOG     Getting token from localStorage: true
+[00:19:24.712] Browser LOG     Adding Authorization header with token
+[00:19:32.364] Browser LOG     Getting token from localStorage: false
+[00:19:32.364] Browser LOG     No token available for Authorization header
+[00:19:51.377] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:19:51.622] Browser LOG     Getting token from localStorage: false
+[00:19:51.622] Browser LOG     No token available for Authorization header
+[00:19:51.788] Browser ERROR   API Error: {}
+[00:19:54.554] Server  LOG      ○ Compiling /login ...
+[00:21:53.895] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:21:54.330] Browser LOG     Getting token from localStorage: false
+[00:21:54.330] Browser LOG     No token available for Authorization header
+[00:21:54.522] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:21:54.522] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:21:54.522] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1765797910680}

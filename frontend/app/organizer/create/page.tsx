@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DarkThemeWrapper } from '@/components/shared/dark-theme-wrapper';
 
 // 4-step wizard as per Phase 2 requirements
 const STEPS = [
@@ -114,6 +115,9 @@ export default function CreateEventPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+
+  // Terms acceptance
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Calculate venue fee
   const venueFee = venueType === 'registered' && selectedVenue 
@@ -281,6 +285,8 @@ export default function CreateEventPage() {
     if (validateStep(currentStep) && currentStep < 4) {
       setCurrentStep(currentStep + 1);
       setError('');
+      // Scroll to top of form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (!validateStep(currentStep)) {
       setError('Please fill in all required fields before continuing');
     }
@@ -290,6 +296,8 @@ export default function CreateEventPage() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       setError('');
+      // Scroll to top of form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -402,26 +410,31 @@ export default function CreateEventPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
-      </div>
+      <DarkThemeWrapper>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        </div>
+      </DarkThemeWrapper>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white mb-4">Please login to create events</p>
-          <Button onClick={() => router.push('/login')} className="gradient-purple-cyan">
-            Go to Login
-          </Button>
+      <DarkThemeWrapper>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-white mb-4">Please login to create events</p>
+            <Button onClick={() => router.push('/login')} className="gradient-purple-cyan">
+              Go to Login
+            </Button>
+          </div>
         </div>
-      </div>
+      </DarkThemeWrapper>
     );
   }
 
   return (
+    <DarkThemeWrapper>
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
@@ -496,7 +509,7 @@ export default function CreateEventPage() {
         </div>
 
         {/* Main Form Card */}
-        <Card className="glass-card border-white/20 bg-gray-900/95 backdrop-blur-xl">
+        <Card className="glass-card border-white/20 !bg-gray-900/95 backdrop-blur-xl" style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)' }}>
           <CardContent className="p-8">
             <AnimatePresence mode="wait">
 
@@ -525,17 +538,16 @@ export default function CreateEventPage() {
                     )}
                   </div>
 
-                  {/* Description with rich text hint */}
+                  {/* Description */}
                   <div className="space-y-2">
                     <Label className="text-white font-semibold">Description *</Label>
                     <Textarea
                       value={description}
                       onChange={(e) => handleFieldChange('description', e.target.value, setDescription)}
-                      placeholder="Describe your event... What can attendees expect? Use **bold** and *italics* for formatting."
+                      placeholder="Tell attendees what makes your event special. Include highlights, performers, activities, and what they can expect..."
                       rows={4}
                       className={`bg-white/5 border-white/20 text-white placeholder:text-gray-400 ${validationErrors.description ? 'border-red-500' : ''}`}
                     />
-                    <p className="text-xs text-gray-400">Supports basic formatting: **bold**, *italic*, [links](url)</p>
                     {validationErrors.description && (
                       <p className="text-xs text-red-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" /> {validationErrors.description}
@@ -1406,10 +1418,17 @@ export default function CreateEventPage() {
                   {/* Terms */}
                   <div className="p-4 bg-white/5 rounded-lg">
                     <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" className="mt-1" />
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 w-4 h-4 rounded border-white/30 bg-white/10 text-purple-500 focus:ring-purple-500"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      />
                       <span className="text-sm text-gray-300">
                         I confirm all event details are accurate and agree to the{' '}
-                        <span className="text-purple-400 underline">Terms & Conditions</span>
+                        <a href="/terms" target="_blank" className="text-purple-400 hover:text-purple-300 underline">Terms & Conditions</a>
+                        {' '}and{' '}
+                        <a href="/privacy" target="_blank" className="text-purple-400 hover:text-purple-300 underline">Privacy Policy</a>
                       </span>
                     </label>
                   </div>
@@ -1455,8 +1474,8 @@ export default function CreateEventPage() {
                   <Button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={loading}
-                    className="gradient-purple-cyan border-0 text-white font-semibold px-8"
+                    disabled={loading || !acceptedTerms}
+                    className="gradient-purple-cyan border-0 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -1477,5 +1496,6 @@ export default function CreateEventPage() {
         </Card>
       </div>
     </div>
+    </DarkThemeWrapper>
   );
 }

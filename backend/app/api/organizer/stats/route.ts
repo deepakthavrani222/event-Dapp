@@ -54,31 +54,46 @@ export async function GET(request: NextRequest) {
     const monthlyRevenue = [];
     const now = new Date();
     
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const monthName = monthDate.toLocaleString('default', { month: 'short' });
+    // Get all tickets for this organizer's events with their prices
+    const allTicketsWithPrices: { date: Date; price: number }[] = [];
+    
+    for (const event of events) {
+      const tickets = await Ticket.find({ eventId: event._id });
       
-      // Get tickets sold in this month
-      let monthRevenue = 0;
-      for (const event of events) {
-        const tickets = await Ticket.find({
-          eventId: event._id,
-          purchasedAt: { $gte: monthDate, $lte: monthEnd }
-        });
-        
-        for (const ticket of tickets) {
-          const ticketType = await TicketType.findById(ticket.ticketTypeId);
-          if (ticketType) {
-            monthRevenue += ticketType.price;
-          }
+      for (const ticket of tickets) {
+        const ticketType = await TicketType.findById(ticket.ticketTypeId);
+        if (ticketType) {
+          // Use purchasedAt, createdAt, or current date as fallback
+          const ticketDate = ticket.purchasedAt || ticket.createdAt || new Date();
+          allTicketsWithPrices.push({
+            date: new Date(ticketDate),
+            price: ticketType.price
+          });
         }
       }
+    }
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      const monthName = monthStart.toLocaleString('default', { month: 'short' });
+      
+      // Calculate revenue for this month
+      const monthRevenue = allTicketsWithPrices
+        .filter(t => t.date >= monthStart && t.date <= monthEnd)
+        .reduce((sum, t) => sum + t.price, 0);
       
       monthlyRevenue.push({
         month: monthName,
         revenue: monthRevenue,
       });
+    }
+    
+    // If no monthly data but we have total revenue, distribute it across recent months
+    const hasMonthlyData = monthlyRevenue.some(m => m.revenue > 0);
+    if (!hasMonthlyData && totalRevenue > 0) {
+      // Put all revenue in current month as fallback
+      monthlyRevenue[5].revenue = totalRevenue;
     }
     
     // Calculate growth (compare current month to last month)

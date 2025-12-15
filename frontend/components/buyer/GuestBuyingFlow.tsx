@@ -485,6 +485,24 @@ export function GuestBuyingFlow({
           {paymentMethod === 'wallet' && <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />}
         </Button>
 
+        {/* MetaMask / Crypto Payment */}
+        <Button
+          variant={paymentMethod === 'crypto' ? 'default' : 'outline'}
+          onClick={() => setPaymentMethod('crypto')}
+          className="w-full justify-start h-16 text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold">MetaMask Wallet</p>
+              <p className="text-xs text-gray-400">Pay with ETH • Secure blockchain payment</p>
+            </div>
+          </div>
+          {paymentMethod === 'crypto' && <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />}
+        </Button>
+
         {/* Apple Pay / Google Pay */}
         <div className="grid grid-cols-2 gap-3">
           <Button
@@ -774,6 +792,23 @@ export function GuestBuyingFlow({
         <AnimatePresence mode="wait">
           {step === 'auth' && renderAuthStep()}
           {step === 'payment' && renderPaymentStep()}
+          {step === 'crypto' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <CryptoPayment
+                amountINR={pricing.total}
+                eventTitle={event.title}
+                ticketType={ticketSelections.map((s: any) => s.name).join(', ')}
+                quantity={ticketSelections.reduce((acc: number, sel: any) => acc + sel.quantity, 0)}
+                onSuccess={handleCryptoSuccess}
+                onCancel={() => setStep('payment')}
+              />
+            </motion.div>
+          )}
           {step === 'processing' && renderProcessingStep()}
           {step === 'success' && renderSuccessStep()}
         </AnimatePresence>

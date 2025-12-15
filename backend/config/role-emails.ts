@@ -73,14 +73,16 @@ export function getRoleForEmail(email: string): string {
     }
   }
   
-  // Fallback: Check for keywords in email
-  if (emailLower.includes('admin')) return 'ADMIN';
-  if (emailLower.includes('organizer') || emailLower.includes('event')) return 'ORGANIZER';
+  // Fallback: Check for keywords in email (more specific roles first)
+  // Check organizer before admin to avoid false matches
+  if (emailLower.includes('organizer') || emailLower.includes('organiser')) return 'ORGANIZER';
   if (emailLower.includes('promoter') || emailLower.includes('promo')) return 'PROMOTER';
   if (emailLower.includes('inspector') || emailLower.includes('verify')) return 'INSPECTOR';
-  if (emailLower.includes('venue') || emailLower.includes('owner')) return 'VENUE_OWNER';
+  if (emailLower.includes('venue')) return 'VENUE_OWNER';
   if (emailLower.includes('artist') || emailLower.includes('performer')) return 'ARTIST';
   if (emailLower.includes('reseller') || emailLower.includes('resale')) return 'RESELLER';
+  // Admin check last - only if email specifically contains 'admin' without other role keywords
+  if (emailLower.includes('admin') && !emailLower.includes('organizer') && !emailLower.includes('organiser')) return 'ADMIN';
   
   // Default role
   return 'BUYER';

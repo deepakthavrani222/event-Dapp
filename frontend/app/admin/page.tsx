@@ -572,36 +572,54 @@ function OverviewTab({ metrics, activity, dailyRevenue, onNavigate }: { metrics:
           <CardContent>
             <div className="h-48 flex items-end justify-between gap-2">
               {dailyRevenue.length > 0 ? (
-                dailyRevenue.map((item, i) => {
-                  // Calculate height based on max revenue
+                (() => {
                   const maxRevenue = Math.max(...dailyRevenue.map(d => d.revenue), 1);
-                  const height = maxRevenue > 0 ? Math.max((item.revenue / maxRevenue) * 100, 8) : 10;
-                  const isToday = i === dailyRevenue.length - 1;
-                  return (
-                    <div
-                      key={item.day}
-                      className="flex-1 flex flex-col items-center gap-1 group relative"
-                    >
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        ₹{item.revenue.toLocaleString()}
+                  const totalWeekRevenue = dailyRevenue.reduce((sum, d) => sum + d.revenue, 0);
+                  
+                  return dailyRevenue.map((item, i) => {
+                    // Calculate height in pixels (max container is 192px / h-48)
+                    const containerHeight = 160; // Leave room for labels
+                    let barHeight: number;
+                    
+                    if (totalWeekRevenue > 0 && item.revenue > 0) {
+                      // Proportional height based on max revenue
+                      barHeight = Math.max((item.revenue / maxRevenue) * containerHeight, 20);
+                    } else if (totalWeekRevenue > 0) {
+                      // Day with 0 revenue but week has data
+                      barHeight = 12;
+                    } else {
+                      // No data at all
+                      barHeight = 16;
+                    }
+                    
+                    const isToday = i === dailyRevenue.length - 1;
+                    
+                    return (
+                      <div
+                        key={item.day}
+                        className="flex-1 flex flex-col items-center gap-1 group relative"
+                      >
+                        {/* Tooltip on hover */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          ₹{item.revenue.toLocaleString()}
+                        </div>
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: barHeight }}
+                          transition={{ delay: i * 0.1, duration: 0.5 }}
+                          className={`w-full rounded-t-lg transition-all cursor-pointer ${
+                            isToday 
+                              ? 'bg-gradient-to-t from-green-500 to-emerald-400 hover:from-green-400 hover:to-emerald-300' 
+                              : 'bg-gradient-to-t from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400'
+                          }`}
+                        />
+                        <span className={`text-xs ${isToday ? 'text-green-400 font-medium' : 'text-gray-400'}`}>
+                          {item.day}
+                        </span>
                       </div>
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        transition={{ delay: i * 0.1, duration: 0.5 }}
-                        className={`w-full rounded-t-lg transition-all cursor-pointer ${
-                          isToday 
-                            ? 'bg-gradient-to-t from-green-500 to-emerald-400 hover:from-green-400 hover:to-emerald-300' 
-                            : 'bg-gradient-to-t from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400'
-                        }`}
-                      />
-                      <span className={`text-xs ${isToday ? 'text-green-400 font-medium' : 'text-gray-400'}`}>
-                        {item.day}
-                      </span>
-                    </div>
-                  );
-                })
+                    );
+                  });
+                })()
               ) : (
                 ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
                   <div
@@ -692,6 +710,9 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: any[]; onApprov
   const [activeQueue, setActiveQueue] = useState<'events' | 'venues' | 'artists' | 'flagged'>('events');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [reviewEvent, setReviewEvent] = useState<any | null>(null);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   // Map real events to display format with category emojis
   const getCategoryEmoji = (category: string) => {
@@ -845,7 +866,16 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: any[]; onApprov
                     <Button onClick={() => onApprove(event.id)} size="sm" className="gradient-purple-cyan border-0">
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve
                     </Button>
-                    <Button variant="outline" size="sm" className="border-white/20">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-white/20"
+                      onClick={() => {
+                        const fullEvent = events.find(e => e.id === event.id);
+                        setReviewEvent(fullEvent || event);
+                        setShowReviewDialog(true);
+                      }}
+                    >
                       <Eye className="h-4 w-4 mr-1" /> Review
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => onReject(event.id, 'Does not meet guidelines')} className="border-red-500/50 text-red-400">
@@ -976,6 +1006,136 @@ function ApprovalsTab({ events, onApprove, onReject }: { events: any[]; onApprov
               <Button variant="outline" onClick={() => setShowBulkConfirm(false)} className="flex-1">Cancel</Button>
               <Button onClick={handleBulkApprove} className="flex-1 bg-green-500 hover:bg-green-600 text-white">
                 <CheckCircle className="h-4 w-4 mr-2" /> Approve All
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Review Event Dialog */}
+      {showReviewDialog && reviewEvent && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => { setShowReviewDialog(false); setReviewEvent(null); setRejectReason(''); }}>
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }} 
+            className="bg-gray-900 border border-white/20 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{reviewEvent.title}</h2>
+                  <p className="text-gray-400 mt-1">Review event details before approval</p>
+                </div>
+                <button 
+                  onClick={() => { setShowReviewDialog(false); setReviewEvent(null); setRejectReason(''); }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Event Details */}
+            <div className="p-6 space-y-6">
+              {/* Image */}
+              {reviewEvent.image && (
+                <div className="rounded-xl overflow-hidden">
+                  <img src={reviewEvent.image} alt={reviewEvent.title} className="w-full h-48 object-cover" />
+                </div>
+              )}
+
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-white/5 rounded-lg">
+                  <p className="text-xs text-gray-400 mb-1">Category</p>
+                  <p className="text-white font-medium">{reviewEvent.category || 'Not specified'}</p>
+                </div>
+                <div className="p-4 bg-white/5 rounded-lg">
+                  <p className="text-xs text-gray-400 mb-1">Date & Time</p>
+                  <p className="text-white font-medium">
+                    {reviewEvent.date ? new Date(reviewEvent.date).toLocaleDateString() : 'TBD'} 
+                    {reviewEvent.time && ` at ${reviewEvent.time}`}
+                  </p>
+                </div>
+                <div className="p-4 bg-white/5 rounded-lg">
+                  <p className="text-xs text-gray-400 mb-1">Venue</p>
+                  <p className="text-white font-medium">{reviewEvent.venue || 'Not specified'}</p>
+                </div>
+                <div className="p-4 bg-white/5 rounded-lg">
+                  <p className="text-xs text-gray-400 mb-1">City</p>
+                  <p className="text-white font-medium">{reviewEvent.city || 'Not specified'}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="p-4 bg-white/5 rounded-lg">
+                <p className="text-xs text-gray-400 mb-2">Description</p>
+                <p className="text-white text-sm">{reviewEvent.description || 'No description provided'}</p>
+              </div>
+
+              {/* Organizer Info */}
+              {reviewEvent.organizer && (
+                <div className="p-4 bg-white/5 rounded-lg">
+                  <p className="text-xs text-gray-400 mb-2">Organizer</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{reviewEvent.organizer.name}</p>
+                      <p className="text-gray-400 text-sm">{reviewEvent.organizer.email}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection Reason Input */}
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-xs text-red-400 mb-2">Rejection Reason (required for rejection)</p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter reason for rejection..."
+                  className="w-full p-3 bg-gray-800 border border-white/20 rounded-lg text-white placeholder:text-gray-500 resize-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="p-6 border-t border-white/10 flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 border-white/20"
+                onClick={() => { setShowReviewDialog(false); setReviewEvent(null); setRejectReason(''); }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                className="flex-1"
+                disabled={!rejectReason.trim()}
+                onClick={() => {
+                  onReject(reviewEvent.id, rejectReason);
+                  setShowReviewDialog(false);
+                  setReviewEvent(null);
+                  setRejectReason('');
+                }}
+              >
+                <XCircle className="h-4 w-4 mr-2" /> Reject
+              </Button>
+              <Button 
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => {
+                  onApprove(reviewEvent.id);
+                  setShowReviewDialog(false);
+                  setReviewEvent(null);
+                  setRejectReason('');
+                }}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" /> Approve
               </Button>
             </div>
           </motion.div>
@@ -2583,7 +2743,7 @@ function QuickActionsPanel({ platformRevenue }: { platformRevenue: number }) {
               <Crown className="h-5 w-5 text-yellow-400" /> Feature Event on Homepage
             </h3>
             <p className="text-gray-400 text-sm mb-4">Select an event to feature prominently on the homepage</p>
-            <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+            <div className="space-y-2 mb-4 max-h-60 overflow-y-auto scrollbar-hide">
               {events.length > 0 ? events.map(event => (
                 <button 
                   key={event.id} 
@@ -2809,7 +2969,7 @@ function LiveFeedPanel({ updates }: { updates: { type: string; message: string; 
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1 max-h-96 overflow-y-auto">
+        <div className="space-y-1 max-h-96 overflow-y-auto scrollbar-hide">
           <AnimatePresence>
             {feedItems.map((item, i) => (
               <motion.div

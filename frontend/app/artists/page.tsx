@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import { PublicHeader } from '@/components/shared/public-header';
+import { Footer } from '@/components/shared/footer';
 import { useTheme } from '@/lib/context/ThemeContext';
 
 interface Artist {
@@ -261,7 +262,7 @@ export default function ArtistsPage() {
       <PublicHeader />
       
       {/* Header Section */}
-      <div className={`border-b pt-16 ${isDark ? 'bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border-white/10' : 'bg-gradient-to-r from-purple-50 to-cyan-50 border-gray-200'}`}>
+      <div className={`border-b pt-20 ${isDark ? 'bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border-white/10' : 'bg-gradient-to-r from-purple-50 to-cyan-50 border-gray-200'}`}>
         <div className="container mx-auto px-4 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -346,6 +347,9 @@ export default function ArtistsPage() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

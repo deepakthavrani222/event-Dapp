@@ -7,6 +7,7 @@ import { ResellDialog } from '@/components/tickets/ResellDialog';
 import { useAuth } from '@/lib/context/AuthContext';
 import { redirect } from 'next/navigation';
 import { PublicHeader } from '@/components/shared/public-header';
+import { Footer } from '@/components/shared/footer';
 import { useTheme } from '@/lib/context/ThemeContext';
 
 export default function MyTicketsPage() {
@@ -36,7 +37,7 @@ export default function MyTicketsPage() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
       <PublicHeader />
-      <div className="pt-16">
+      <div className="pt-20">
         <MyTicketsHub />
       </div>
       
@@ -73,6 +74,9 @@ export default function MyTicketsPage() {
           }}
         />
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
