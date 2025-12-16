@@ -157,6 +157,24 @@ export default function EventManagementPage() {
     }
   };
 
+  // Toggle auctions
+  const toggleAuctions = async () => {
+    try {
+      const newAuctionSettings = {
+        ...event.auctionSettings,
+        auctionsEnabled: !event.auctionSettings?.auctionsEnabled,
+      };
+      await apiClient.request(`/api/organizer/events/${eventId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ auctionSettings: newAuctionSettings }),
+      });
+      // Refresh event data
+      fetchEventData();
+    } catch (error) {
+      console.error('Failed to toggle auctions:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
@@ -706,6 +724,47 @@ export default function EventManagementPage() {
                   <Button onClick={() => setShowAddTicketsModal(true)} variant="outline" className="border-white/20">
                     <Plus className="h-4 w-4 mr-2" /> Add Tickets
                   </Button>
+                </CardContent>
+              </Card>
+
+              {/* Auction Settings */}
+              <Card className="border-orange-500/30 bg-orange-500/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-300">
+                    <DollarSign className="h-5 w-5" />
+                    Auction Settings
+                  </CardTitle>
+                  <CardDescription className="text-orange-300/70">
+                    Control whether buyers can auction their tickets (ETH bidding)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <p className="font-medium text-white">Allow Auctions</p>
+                      <p className="text-sm text-gray-400">
+                        {event.auctionSettings?.auctionsEnabled 
+                          ? `Enabled (Max ${event.auctionSettings?.maxAuctionPriceCapPercent || 150}% price cap)`
+                          : 'Buyers cannot auction tickets for this event'}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={toggleAuctions}
+                      variant={event.auctionSettings?.auctionsEnabled ? 'default' : 'outline'}
+                      className={event.auctionSettings?.auctionsEnabled 
+                        ? 'bg-orange-500 hover:bg-orange-600' 
+                        : 'border-orange-500/50 text-orange-300'}
+                    >
+                      {event.auctionSettings?.auctionsEnabled 
+                        ? <><X className="h-4 w-4 mr-1" /> Disable</> 
+                        : <><Check className="h-4 w-4 mr-1" /> Enable</>}
+                    </Button>
+                  </div>
+                  {event.auctionSettings?.auctionsEnabled && (
+                    <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg text-sm text-orange-300">
+                      <p>🔨 Auction fees: Platform 7.5% + Organizer {event.royaltySettings?.royaltyPercentage || 5}% + Artist 10%</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

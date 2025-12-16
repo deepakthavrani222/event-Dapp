@@ -102,6 +102,11 @@ export default function CreateEventPage() {
   const [enableResaleCap, setEnableResaleCap] = useState(true);
   const [soulboundMode, setSoulboundMode] = useState(false);
 
+  // Auction Settings (Organizer controls)
+  const [enableAuctions, setEnableAuctions] = useState(false);
+  const [maxAuctionPriceCap, setMaxAuctionPriceCap] = useState(150); // 150% of original
+  const [artistWallet, setArtistWallet] = useState('');
+
   // Step 3: Promotion & Settings
   const [category, setCategory] = useState('Music');
   const [tags, setTags] = useState<string[]>([]);
@@ -145,6 +150,7 @@ export default function CreateEventPage() {
       image, imagePublicId, ticketTypes, enableResale, royaltyPercentage, maxPerBuyer, 
       maxResalePrice, enableResaleCap, soulboundMode, category, tags, enableReferrals, 
       referralCommission, websiteUrl, socialLinks, currentStep,
+      enableAuctions, maxAuctionPriceCap, artistWallet,
       savedAt: new Date().toISOString()
     };
     localStorage.setItem('event_draft_v2', JSON.stringify(draftData));
@@ -153,7 +159,8 @@ export default function CreateEventPage() {
   }, [title, description, date, time, timezone, venueType, selectedVenue, venue, city, location, 
       image, imagePublicId, ticketTypes, enableResale, royaltyPercentage, maxPerBuyer, 
       maxResalePrice, enableResaleCap, soulboundMode, category, tags, enableReferrals, 
-      referralCommission, websiteUrl, socialLinks, currentStep]);
+      referralCommission, websiteUrl, socialLinks, currentStep,
+      enableAuctions, maxAuctionPriceCap, artistWallet]);
 
   // Load draft on mount
   useEffect(() => {
@@ -216,6 +223,9 @@ export default function CreateEventPage() {
         setWebsiteUrl(draft.websiteUrl || '');
         setSocialLinks(draft.socialLinks || { instagram: '', twitter: '', facebook: '' });
         setCurrentStep(draft.currentStep || 1);
+        setEnableAuctions(draft.enableAuctions || false);
+        setMaxAuctionPriceCap(draft.maxAuctionPriceCap || 150);
+        setArtistWallet(draft.artistWallet || '');
         setHasDraft(false);
       } catch (e) {
         console.error('Failed to restore draft:', e);
@@ -379,6 +389,13 @@ export default function CreateEventPage() {
           referralCommission: enableReferrals ? referralCommission : 0,
           websiteUrl,
           socialLinks,
+        },
+        auctionSettings: {
+          auctionsEnabled: !soulboundMode && enableAuctions,
+          maxAuctionPriceCapPercent: maxAuctionPriceCap,
+          organizerRoyaltyPercent: royaltyPercentage * 100, // Convert to basis points
+          artistRoyaltyPercent: 1000, // 10% default
+          artistWallet: artistWallet || '',
         },
         venueFee,
       };
@@ -1045,6 +1062,77 @@ export default function CreateEventPage() {
                       </>
                     )}
 
+                    {/* Auction Settings */}
+                    {!soulboundMode && enableResale && (
+                      <div className="border border-orange-500/30 rounded-lg p-4 bg-orange-500/10 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-500/20 rounded-lg">
+                              <DollarSign className="h-5 w-5 text-orange-400" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-white">Allow Auctions</p>
+                              <p className="text-xs text-gray-400">Let buyers auction their tickets (ETH bidding)</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEnableAuctions(!enableAuctions)}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${enableAuctions ? 'bg-orange-500' : 'bg-gray-600'}`}
+                          >
+                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableAuctions ? 'left-7' : 'left-1'}`} />
+                          </button>
+                        </div>
+
+                        {enableAuctions && (
+                          <>
+                            {/* Auction Price Cap */}
+                            <div className="space-y-3 p-3 bg-white/5 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <span className="text-white font-medium">Max Auction Price Cap</span>
+                                <span className="text-lg font-bold text-orange-400">{maxAuctionPriceCap}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="100"
+                                max="300"
+                                step="10"
+                                value={maxAuctionPriceCap}
+                                onChange={(e) => setMaxAuctionPriceCap(parseInt(e.target.value))}
+                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                              />
+                              <div className="flex justify-between text-xs text-gray-400">
+                                <span>100% (Face value)</span>
+                                <span>150% (Default)</span>
+                                <span>300% (Max)</span>
+                              </div>
+                              <p className="text-xs text-orange-400">🔨 Bids cannot exceed {maxAuctionPriceCap}% of original ticket price</p>
+                            </div>
+
+                            {/* Artist Wallet (Optional) */}
+                            <div className="space-y-2 p-3 bg-white/5 rounded-lg">
+                              <Label className="text-sm text-gray-300">Artist Wallet (Optional)</Label>
+                              <Input
+                                value={artistWallet}
+                                onChange={(e) => setArtistWallet(e.target.value)}
+                                placeholder="0x... (for artist royalties on auctions)"
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
+                              />
+                              <p className="text-xs text-gray-400">Artist gets 10% royalty on auction sales if wallet provided</p>
+                            </div>
+
+                            {/* Auction Info */}
+                            <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                              <p className="text-xs text-orange-300 flex items-center gap-2">
+                                <Info className="h-3 w-3" />
+                                Auction fees: Platform 7.5% + Organizer {royaltyPercentage}% + Artist 10%
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {/* NFT Preview */}
                     <div className="p-4 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 rounded-lg">
                       <p className="text-sm text-gray-300 mb-3">🎫 Mock Ticket NFT Preview</p>
@@ -1367,6 +1455,18 @@ export default function CreateEventPage() {
                         <p className="text-gray-400">Max per Buyer</p>
                         <p className="text-white font-medium">{maxPerBuyer} tickets</p>
                       </div>
+                      <div>
+                        <p className="text-gray-400">Auctions</p>
+                        <p className="text-white font-medium">
+                          {soulboundMode || !enableResale ? '❌ Disabled' : enableAuctions ? '✅ Enabled' : '❌ Disabled'}
+                        </p>
+                      </div>
+                      {enableAuctions && !soulboundMode && enableResale && (
+                        <div>
+                          <p className="text-gray-400">Auction Price Cap</p>
+                          <p className="text-orange-400 font-medium">{maxAuctionPriceCap}%</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -19,14 +19,14 @@ import { useTheme } from "@/lib/context/ThemeContext"
 
 const guestNavItems = [
   { label: "For you", href: "/" },
-  { label: "Events", href: "/events" },
-  { label: "Artists", href: "/artists" },
+  { label: "Events", href: "/buyer" },
+  { label: "Auctions", href: "/auction" },
 ]
 
 const buyerNavItems = [
   { label: "For you", href: "/" },
   { label: "Events", href: "/buyer" },
-  { label: "Artists", href: "/artists" },
+  { label: "Auctions", href: "/auction" },
   { label: "My Tickets", href: "/my-tickets" },
 ]
 
@@ -59,7 +59,7 @@ export function PublicHeader() {
           ? 'bg-[#0A0A0A]/90 border-[#333333]' 
           : 'bg-white/95 border-gray-200 shadow-sm'
       }`}>
-      <div className="flex h-20 items-center px-8 lg:px-12">
+      <div className="flex h-20 items-center px-4 lg:px-6">
         {/* Left Section: Logo + Divider + Location */}
         <div className="flex items-center gap-4">
           {/* Logo - District Style */}
@@ -78,15 +78,11 @@ export function PublicHeader() {
           {/* Location */}
           <button 
             onClick={() => setLocationOpen(true)}
-            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border ${
-              isDark 
-                ? 'bg-white/10 hover:bg-white/15 border-white/20' 
-                : 'bg-gray-100 hover:bg-gray-200 border-gray-200'
-            }`}
+            className="hidden md:flex items-center gap-1.5 transition-opacity hover:opacity-70"
           >
             <MapPin className={`h-4 w-4 ${isDark ? 'text-cyan-400' : 'text-[#E23744]'}`} />
-            <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedCity}</span>
-            <ChevronDown className={`h-3 w-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <span className={`font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedCity}</span>
+            <ChevronDown className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
         </div>
 
@@ -104,7 +100,7 @@ export function PublicHeader() {
                       : "bg-[#E23744]/10 text-[#E23744] border border-[#E23744]/30"
                     : isDark
                       ? "text-[#B0B0B0] hover:text-[#FFFFFF] hover:bg-[#161616]"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      : "text-gray-900 hover:text-black hover:bg-gray-100"
                 }`}
               >
                 {item.label}
@@ -116,7 +112,7 @@ export function PublicHeader() {
         )}
 
         {/* Right Section */}
-        <div className="flex items-center gap-4 ml-auto lg:ml-0">
+        <div className="flex items-center gap-4 ml-auto">
           {/* Theme Toggle */}
           <div className="hidden md:block">
             <ThemeToggle />
@@ -125,7 +121,7 @@ export function PublicHeader() {
           {/* Search Field - District Style */}
           <button
             onClick={() => setSearchOpen(true)}
-            className={`hidden md:flex items-center gap-3 px-5 py-3 rounded-full transition-all min-w-[340px] ${
+            className={`hidden md:flex items-center gap-3 px-5 py-2.5 rounded-lg transition-all min-w-[340px] ${
               isDark 
                 ? 'bg-white/5 hover:bg-white/10 border border-white/20' 
                 : 'bg-[#F5F5F5] hover:bg-[#EBEBEB] border border-gray-200'
@@ -133,19 +129,12 @@ export function PublicHeader() {
           >
             <Search className={`h-5 w-5 ${isDark ? 'text-purple-400' : 'text-[#7C3AED]'}`} />
             <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              Search for events, artists and more
+              Search for events, auctions and more
             </span>
           </button>
 
           {isGuest ? (
             <div className="hidden md:flex items-center gap-3">
-              <Button
-                size="sm"
-                onClick={openVerificationFlow}
-                className="gradient-yellow-orange hover:opacity-90 border-0 text-black rounded-full h-10 px-6 font-bold"
-              >
-                ⭐ Verify as Artist
-              </Button>
               <Link href="/login">
                 <Button
                   size="sm"
@@ -225,15 +214,6 @@ export function PublicHeader() {
               {/* Mobile Auth Buttons */}
               {isGuest ? (
                 <div className="space-y-3 mt-4">
-                  <Button
-                    className="w-full gradient-yellow-orange hover:opacity-90 border-0 text-black h-12 font-bold"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      openVerificationFlow();
-                    }}
-                  >
-                    ⭐ Verify as Artist
-                  </Button>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white h-12 font-semibold neon-glow"

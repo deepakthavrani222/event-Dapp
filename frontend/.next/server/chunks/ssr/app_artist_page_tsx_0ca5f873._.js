@@ -1,0 +1,3 @@
+module.exports=[94117,a=>{"use strict";a.i(87924),a.i(72131),a.i(3130),a.i(40695),a.i(54161),a.i(21958),a.i(2173),a.i(37565),a.i(35277),a.i(69404),a.i(30991),a.i(67937),a.i(38998),a.i(72811),a.i(36658),a.i(33156),a.i(60381),a.i(63467),a.i(63918),a.i(26405),a.i(52839),a.i(10496),a.i(37118),a.i(62477),a.i(46271),a.i(5522),a.i(17171),a.i(46893),a.i(93335),a.i(32392),a.i(10209),a.i(46157);a.i(35652),a.i(2769),a.i(49625),a.i(77687);a.i(29892),a.i(57851);a.i(1304),a.i(77859);let b=Error("Cannot find module 'lucide-react/dist/esm/icons/click'");throw b.code="MODULE_NOT_FOUND",b}];
+
+//# sourceMappingURL=app_artist_page_tsx_0ca5f873._.js.map

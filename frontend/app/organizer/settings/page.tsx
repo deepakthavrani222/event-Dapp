@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { TwoFactorAuth } from '@/components/shared/two-factor-auth';
 import { OrganizerBadges, OrganizerBadgeDisplay } from '@/components/shared/organizer-badges';
+import { OrganizerWalletCard } from '@/components/organizer/OrganizerWalletCard';
 import { motion } from 'framer-motion';
 
 export default function OrganizerSettingsPage() {
@@ -198,14 +199,6 @@ export default function OrganizerSettingsPage() {
                       className="bg-white/5 border-white/20 text-white"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Wallet Address</Label>
-                    <Input
-                      value={user?.walletAddress || ''}
-                      readOnly
-                      className="bg-white/5 border-white/20 text-gray-400 font-mono text-sm"
-                    />
-                  </div>
                 </div>
                 <Button onClick={handleSaveProfile} disabled={loading} className="gradient-purple-cyan border-0">
                   {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
@@ -213,6 +206,9 @@ export default function OrganizerSettingsPage() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* MetaMask Wallet Card */}
+            <OrganizerWalletCard />
 
             {/* Danger Zone */}
             <Card className="border-red-500/30 bg-red-500/10">

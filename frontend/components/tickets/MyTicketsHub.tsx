@@ -26,7 +26,10 @@ import {
   Copy,
   CheckCircle,
   Star,
-  Heart
+  Heart,
+  Gavel,
+  Trophy,
+  Flame
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -37,8 +40,10 @@ import { TicketEntryScreen } from './TicketEntryScreen';
 import { GiftTransferDialog } from './GiftTransferDialog';
 import { ResellDialog } from './ResellDialog';
 import { RealisticTicketCard } from './RealisticTicketCard';
+import { AuctionDialog } from '@/components/auction/AuctionDialog';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/lib/context/ThemeContext';
+import Link from 'next/link';
 
 interface TicketData {
   id: string;
@@ -71,6 +76,274 @@ interface ResaleListingData {
   listedDate: string;
 }
 
+// Auctions Section Component
+function AuctionsSection({ 
+  tickets, 
+  isDark, 
+  onCreateAuction 
+}: { 
+  tickets: TicketData[]; 
+  isDark: boolean; 
+  onCreateAuction: (ticket: TicketData) => void;
+}) {
+  const [myAuctions, setMyAuctions] = useState<any>({ selling: [], bidding: [], won: [], stats: {} });
+  const [auctionsLoading, setAuctionsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMyAuctions();
+  }, []);
+
+  const fetchMyAuctions = async () => {
+    try {
+      const data = await apiClient.getMyAuctions();
+      if (data.success) {
+        setMyAuctions(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch auctions:', error);
+    } finally {
+      setAuctionsLoading(false);
+    }
+  };
+
+  const formatTimeRemaining = (ms: number): string => {
+    if (ms <= 0) return 'Ended';
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const auctionableTickets = tickets.filter(t => t.resellable && t.status === 'upcoming');
+
+  return (
+    <div className="space-y-8">
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+          <CardContent className="py-4 text-center">
+            <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {myAuctions.stats.activeSellingCount || 0}
+            </p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Active Auctions</p>
+          </CardContent>
+        </Card>
+        <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+          <CardContent className="py-4 text-center">
+            <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {myAuctions.stats.activeBiddingCount || 0}
+            </p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Active Bids</p>
+          </CardContent>
+        </Card>
+        <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-green-500">{myAuctions.stats.totalWon || 0}</p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Won</p>
+          </CardContent>
+        </Card>
+        <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-orange-500">{myAuctions.stats.totalSold || 0}</p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Sold</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Create Auction Section */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Gavel className="h-5 w-5 text-orange-500" />
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Auction Your Tickets
+            </h3>
+          </div>
+          <Link href="/auction">
+            <Button variant="outline" size="sm" className={isDark ? 'border-white/20' : 'border-gray-300'}>
+              Browse All Auctions
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+
+        {auctionableTickets.length === 0 ? (
+          <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+            <CardContent className="py-8 text-center">
+              <Ticket className={`h-12 w-12 mx-auto mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+                No tickets available for auction
+              </p>
+              <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                Buy tickets to upcoming events to auction them
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {auctionableTickets.map((ticket) => (
+              <Card key={ticket.id} className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+                <CardContent className="p-4">
+                  <div className="flex gap-3">
+                    <img
+                      src={ticket.eventImage}
+                      alt={ticket.eventTitle}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {ticket.eventTitle}
+                      </h4>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {ticket.ticketType}
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        ₹{ticket.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => onCreateAuction(ticket)}
+                    className="w-full mt-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                    size="sm"
+                  >
+                    <Gavel className="h-4 w-4 mr-2" />
+                    Start Auction
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* My Active Bids */}
+      {myAuctions.bidding.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-blue-500" />
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              My Active Bids
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {myAuctions.bidding.map((auction: any) => (
+              <Card key={auction._id} className={`${isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'} ${
+                auction.userBid?.isWinning ? 'ring-2 ring-green-500/50' : ''
+              }`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={auction.eventId?.imageUrl || '/placeholder-event.jpg'}
+                      alt={auction.eventId?.title}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {auction.eventId?.title}
+                        </h4>
+                        {auction.userBid?.isWinning ? (
+                          <Badge className="bg-green-500 text-white text-xs">Winning</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-500 border-orange-500 text-xs">Outbid</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-sm">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+                          Your bid: <span className="font-bold text-orange-500">{auction.userBid?.amountEth?.toFixed(4)} ETH</span>
+                        </span>
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+                          Current: <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{auction.currentBidEth?.toFixed(4)} ETH</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`flex items-center gap-1 text-sm ${
+                        auction.timeRemainingMs < 30 * 60 * 1000 ? 'text-red-500' : isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        <Clock className="h-4 w-4" />
+                        {formatTimeRemaining(auction.timeRemainingMs)}
+                      </div>
+                      <Link href={`/auction/${auction._id}`}>
+                        <Button size="sm" className="mt-2 bg-orange-500 hover:bg-orange-600 text-white">
+                          {auction.userBid?.isWinning ? 'View' : 'Bid Again'}
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Won Auctions */}
+      {myAuctions.won.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Won Auctions
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {myAuctions.won.slice(0, 4).map((auction: any) => (
+              <Card key={auction._id} className={`${isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'} ring-2 ring-yellow-500/30`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img
+                        src={auction.eventId?.imageUrl || '/placeholder-event.jpg'}
+                        alt={auction.eventId?.title}
+                        className="w-14 h-14 rounded-lg object-cover"
+                      />
+                      <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1">
+                        <Trophy className="h-3 w-3 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {auction.eventId?.title}
+                      </h4>
+                      <p className="text-sm text-green-500 font-medium">
+                        Won for {auction.finalPriceEth?.toFixed(4)} ETH
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!auctionsLoading && myAuctions.bidding.length === 0 && myAuctions.selling.length === 0 && myAuctions.won.length === 0 && auctionableTickets.length === 0 && (
+        <Card className={isDark ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}>
+          <CardContent className="py-12 text-center">
+            <Gavel className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              No Auction Activity Yet
+            </h3>
+            <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Browse live auctions or auction your tickets to get started
+            </p>
+            <Link href="/auction">
+              <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
+                Browse Live Auctions
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export function MyTicketsHub() {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -87,6 +360,7 @@ export function MyTicketsHub() {
   const [editPrice, setEditPrice] = useState<string>('');
   const [viewingListing, setViewingListing] = useState<ResaleListingData | null>(null);
   const [confirmRemoveListing, setConfirmRemoveListing] = useState<string | null>(null);
+  const [showAuctionDialog, setShowAuctionDialog] = useState(false);
 
   // Use real-time tickets hook for instant updates
   const { 
@@ -650,8 +924,9 @@ export function MyTicketsHub() {
           <TabsTrigger value="resale" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
             Resale Listings ({resaleListings.length})
           </TabsTrigger>
-          <TabsTrigger value="wallet" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
-            Wallet
+          <TabsTrigger value="auctions" className={isDark ? 'data-[state=active]:bg-white/20' : 'data-[state=active]:bg-white data-[state=active]:shadow-sm'}>
+            <Gavel className="h-4 w-4 mr-1" />
+            Auctions
           </TabsTrigger>
         </TabsList>
 
@@ -767,48 +1042,16 @@ export function MyTicketsHub() {
           )}
         </TabsContent>
 
-        {/* Wallet Tab */}
-        <TabsContent value="wallet" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Balance Card */}
-            <Card className={isDark ? 'glass-card border-white/20 bg-white/5' : 'bg-white border border-gray-200 shadow-lg'}>
-              <CardHeader>
-                <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Wallet Balance</h3>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <p className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{walletBalance.toLocaleString()}</p>
-                  <p className="text-gray-400">Available for withdrawal</p>
-                </div>
-                <Button className="w-full gradient-purple-cyan hover:opacity-90 border-0 text-white">
-                  Withdraw to Bank Account
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Recent Transactions */}
-            <Card className="glass-card border-white/20 bg-white/5">
-              <CardHeader>
-                <h3 className="text-xl font-bold text-white">Recent Transactions</h3>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Ticket sale - AR Rahman</span>
-                    <span className="text-green-400">+₹4,200</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Platform fee</span>
-                    <span className="text-red-400">-₹420</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Withdrawal to bank</span>
-                    <span className="text-gray-400">-₹8,000</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Auctions Tab */}
+        <TabsContent value="auctions" className="space-y-6">
+          <AuctionsSection 
+            tickets={upcomingTickets} 
+            isDark={isDark} 
+            onCreateAuction={(ticket) => {
+              setSelectedTicket(ticket);
+              setShowAuctionDialog(true);
+            }}
+          />
         </TabsContent>
       </Tabs>
 
@@ -864,6 +1107,28 @@ export function MyTicketsHub() {
             setSelectedTicket(null);
             fetchUserTickets();
             fetchResaleListings();
+          }}
+        />
+      )}
+
+      {/* Auction Dialog */}
+      {showAuctionDialog && selectedTicket && (
+        <AuctionDialog
+          ticket={{
+            _id: selectedTicket.id,
+            eventId: { _id: selectedTicket.eventId, title: selectedTicket.eventTitle },
+            ticketTypeId: { _id: '', name: selectedTicket.ticketType, price: selectedTicket.price },
+            tokenId: selectedTicket.qrCode,
+          }}
+          open={showAuctionDialog}
+          onClose={() => {
+            setShowAuctionDialog(false);
+            setSelectedTicket(null);
+          }}
+          onSuccess={() => {
+            setShowAuctionDialog(false);
+            setSelectedTicket(null);
+            fetchUserTickets();
           }}
         />
       )}

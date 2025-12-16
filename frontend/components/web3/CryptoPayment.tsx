@@ -24,9 +24,11 @@ interface CryptoPaymentProps {
   eventTitle: string;
   ticketType: string;
   quantity: number;
+  tokenId?: number; // Smart contract token ID
   onSuccess: (txHash: string) => void;
   onCancel: () => void;
   recipientAddress?: string;
+  useSmartContract?: boolean; // Use smart contract purchase
 }
 
 export function CryptoPayment({
@@ -34,9 +36,11 @@ export function CryptoPayment({
   eventTitle,
   ticketType,
   quantity,
+  tokenId,
   onSuccess,
   onCancel,
-  recipientAddress = WEB3_CONFIG.platformWallet
+  recipientAddress = WEB3_CONFIG.platformWallet,
+  useSmartContract = false
 }: CryptoPaymentProps) {
   const {
     isConnected,
@@ -49,6 +53,7 @@ export function CryptoPayment({
     connect,
     disconnect,
     sendTransaction,
+    purchaseTicketOnChain,
     switchNetwork
   } = useWallet();
 
@@ -84,7 +89,20 @@ export function CryptoPayment({
     setPaymentStatus('processing');
 
     try {
-      const hash = await sendTransaction(recipientAddress, amountETH.toFixed(6));
+      let hash: string | null = null;
+
+      // Use smart contract if enabled and tokenId is provided
+      if (useSmartContract && tokenId !== undefined && WEB3_CONFIG.contracts.ticketNFT) {
+        hash = await purchaseTicketOnChain(
+          WEB3_CONFIG.contracts.ticketNFT,
+          tokenId,
+          quantity,
+          amountETH.toFixed(6)
+        );
+      } else {
+        // Fallback to simple ETH transfer
+        hash = await sendTransaction(recipientAddress, amountETH.toFixed(6));
+      }
       
       if (hash) {
         setTxHash(hash);
@@ -95,7 +113,9 @@ export function CryptoPayment({
           setPaymentStatus('success');
           toast({
             title: 'Payment Successful! 🎉',
-            description: 'Your tickets are being minted as NFTs.',
+            description: useSmartContract 
+              ? 'Your NFT tickets have been minted to your wallet!' 
+              : 'Your tickets are being minted as NFTs.',
           });
           onSuccess(hash);
         }, 3000);

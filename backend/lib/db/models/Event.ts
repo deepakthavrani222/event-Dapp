@@ -19,6 +19,14 @@ export interface IPromotionSettings {
   };
 }
 
+export interface IAuctionSettings {
+  auctionsEnabled: boolean;
+  maxAuctionPriceCapPercent: number; // e.g., 150 = 150% of original price
+  organizerRoyaltyPercent: number; // Royalty on auction sales
+  artistRoyaltyPercent: number;
+  artistWallet?: string;
+}
+
 export interface IEvent extends Document {
   title: string;
   description: string;
@@ -38,6 +46,8 @@ export interface IEvent extends Document {
   royaltySettings: IRoyaltySettings;
   // Promotion Settings
   promotionSettings?: IPromotionSettings;
+  // Auction Settings
+  auctionSettings?: IAuctionSettings;
   // Venue fee (if registered venue)
   venueFee?: number;
   // Smart Contract Address (when deployed)
@@ -74,6 +84,17 @@ const PromotionSettingsSchema = new Schema<IPromotionSettings>(
   { _id: false }
 );
 
+const AuctionSettingsSchema = new Schema<IAuctionSettings>(
+  {
+    auctionsEnabled: { type: Boolean, default: false },
+    maxAuctionPriceCapPercent: { type: Number, default: 150, min: 100, max: 300 },
+    organizerRoyaltyPercent: { type: Number, default: 500 }, // 5% in basis points
+    artistRoyaltyPercent: { type: Number, default: 1000 }, // 10% in basis points
+    artistWallet: { type: String },
+  },
+  { _id: false }
+);
+
 const EventSchema = new Schema<IEvent>(
   {
     title: { type: String, required: true },
@@ -103,6 +124,11 @@ const EventSchema = new Schema<IEvent>(
     promotionSettings: {
       type: PromotionSettingsSchema,
       default: () => ({ tags: [], enableReferrals: false, referralCommission: 5 }),
+    },
+    // Auction Settings
+    auctionSettings: {
+      type: AuctionSettingsSchema,
+      default: () => ({ auctionsEnabled: false, maxAuctionPriceCapPercent: 150, organizerRoyaltyPercent: 500, artistRoyaltyPercent: 1000 }),
     },
     // Venue fee
     venueFee: { type: Number, default: 0 },

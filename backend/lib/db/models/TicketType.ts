@@ -6,6 +6,7 @@ export interface ITicketType extends Document {
   description?: string;
   tokenId: string;
   price: number;
+  priceEth?: number; // Price in ETH for auction reference
   totalSupply: number;
   availableSupply: number;
   soldCount: number;
@@ -39,6 +40,7 @@ const TicketTypeSchema = new Schema<ITicketType>(
     description: { type: String, default: '' },
     tokenId: { type: String, required: true, unique: true },
     price: { type: Number, required: true },
+    priceEth: { type: Number }, // Price in ETH
     totalSupply: { type: Number, required: true },
     availableSupply: { type: Number, required: true },
     soldCount: { type: Number, default: 0 },

@@ -82,6 +82,7 @@ export async function GET(
         rejectionReason: event.rejectionReason,
         royaltySettings: event.royaltySettings,
         promotionSettings: event.promotionSettings,
+        auctionSettings: event.auctionSettings,
         venueFee: event.venueFee,
         totalRevenue: event.totalRevenue,
         totalRoyaltiesEarned: event.totalRoyaltiesEarned,
@@ -139,7 +140,7 @@ export async function PUT(
     const allowedUpdates = [
       'title', 'description', 'category', 'date', 'time', 'timezone',
       'venue', 'city', 'location', 'image', 'imagePublicId',
-      'royaltySettings', 'promotionSettings'
+      'royaltySettings', 'promotionSettings', 'auctionSettings'
     ];
 
     // Only update allowed fields

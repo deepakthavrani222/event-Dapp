@@ -559,6 +559,67 @@ class ApiClient {
       headers: {}, // Public endpoint
     });
   }
+
+  // Auction endpoints
+  async getAuctions(filters?: { eventId?: string; status?: string; page?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.eventId) params.append('eventId', filters.eventId);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.page) params.append('page', filters.page.toString());
+    
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/api/buyer/auctions${query}`, {
+      method: 'GET',
+    });
+  }
+
+  async getMyAuctions() {
+    return this.request('/api/buyer/my-auctions', {
+      method: 'GET',
+    });
+  }
+
+  async createAuction(auctionData: {
+    ticketId: string;
+    startingBidEth: number;
+    reservePriceEth?: number;
+    bidIncrementEth?: number;
+    durationHours?: number;
+  }) {
+    return this.request('/api/buyer/auctions', {
+      method: 'POST',
+      body: JSON.stringify(auctionData),
+    });
+  }
+
+  async getAuction(auctionId: string) {
+    return this.request(`/api/buyer/auctions/${auctionId}`, {
+      method: 'GET',
+    });
+  }
+
+  async placeBid(auctionId: string, bidData: {
+    amountEth: number;
+    txHash?: string;
+    walletAddress?: string;
+  }) {
+    return this.request(`/api/buyer/auctions/${auctionId}/bid`, {
+      method: 'POST',
+      body: JSON.stringify(bidData),
+    });
+  }
+
+  async cancelAuction(auctionId: string) {
+    return this.request(`/api/buyer/auctions/${auctionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async settleAuction(auctionId: string) {
+    return this.request(`/api/buyer/auctions/${auctionId}/settle`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);

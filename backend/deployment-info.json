@@ -1,8 +1,21 @@
 {
   "network": "sepolia",
-  "contractAddress": "0xD69CabD6C3Aab58c145D4275c5Aca5210c7ADb9E",
+  "chainId": 11155111,
+  "contractName": "TicketNFT",
+  "contractAddress": "0xd53A20bDe66b69A38f39fEa1171FFBA6e3CF579e",
+  "platformWallet": "0x2688AfA324CFee19eae07667aD62Cf0418Abe046",
+  "platformFeePercent": 5,
   "deployer": "0x2688AfA324CFee19eae07667aD62Cf0418Abe046",
   "baseURI": "https://api.ticketchain.com/metadata/",
-  "deployedAt": "2025-12-09T11:47:14.724Z",
-  "transactionHash": "0xf3856ae470b8236e7be02ac61404b8dfb8958d357e2d1ead11350e67ab6f42fd"
+  "deployedAt": "2025-12-16T11:12:38.749Z",
+  "transactionHash": "0x8a2fb11117a75a322bddffa2c667346e26a83d36217283504363f70290f82d56",
+  "features": [
+    "ERC-1155 Multi-token",
+    "ETH Payment with purchaseTicket()",
+    "5% Platform Fee",
+    "95% to Organizer",
+    "Royalty Support (ERC-2981)",
+    "Pausable",
+    "Access Control"
+  ]
 }

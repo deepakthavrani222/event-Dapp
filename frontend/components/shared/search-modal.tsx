@@ -14,20 +14,11 @@ interface SearchModalProps {
   onClose: () => void
 }
 
-type SearchCategory = 'all' | 'events' | 'artists'
-
-interface Artist {
-  id: string
-  name: string
-  image?: string
-  genre?: string
-}
-
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeCategory, setActiveCategory] = useState<SearchCategory>('all')
+  const [activeFilter, setActiveFilter] = useState<string>('all')
   const [events, setEvents] = useState<Event[]>([])
-  const [artists, setArtists] = useState<Artist[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -51,19 +42,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       const response = await apiClient.getEvents()
       setEvents(response.events || [])
       
-      // Extract unique artists from events
-      const uniqueArtists = new Map<string, Artist>()
-      response.events?.forEach((event: Event) => {
-        if (event.artistName) {
-          uniqueArtists.set(event.artistName, {
-            id: event.artistId || event.artistName,
-            name: event.artistName,
-            image: event.artistImage,
-            genre: event.category
-          })
-        }
-      })
-      setArtists(Array.from(uniqueArtists.values()))
+      // Extract unique categories from events
+      const uniqueCategories = [...new Set(response.events?.map((event: Event) => event.category).filter(Boolean))]
+      setCategories(uniqueCategories as string[])
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
@@ -72,36 +53,35 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   }
 
 
-  // Filter results based on search query
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter results based on search query and active filter
+  const getFilteredEvents = () => {
+    let filtered = events
 
-  const filteredArtists = artists.filter(artist =>
-    artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    artist.genre?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    // First filter by category if not 'all'
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(event => 
+        event.category?.toLowerCase() === activeFilter.toLowerCase()
+      )
+    }
 
-  // Get results based on active category
-  const getResults = () => {
-    if (activeCategory === 'events') return { events: filteredEvents, artists: [] }
-    if (activeCategory === 'artists') return { events: [], artists: filteredArtists }
-    return { events: filteredEvents, artists: filteredArtists }
+    // Then filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(event =>
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    return filtered
   }
 
-  const results = getResults()
+  const filteredEvents = getFilteredEvents()
 
-  // Get trending items (first 6 events)
-  const trendingEvents = events.slice(0, 6)
-  const trendingArtists = artists.slice(0, 4)
-
-  const categories: { key: SearchCategory; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'events', label: 'Events' },
-    { key: 'artists', label: 'Artists' },
-  ]
+  // Get trending items (first 6 events based on filter)
+  const trendingEvents = activeFilter === 'all' 
+    ? events.slice(0, 6) 
+    : events.filter(e => e.category?.toLowerCase() === activeFilter.toLowerCase()).slice(0, 6)
 
   // Close on escape key
   useEffect(() => {
@@ -158,7 +138,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             className="fixed inset-0 flex items-start justify-center pt-20 z-[101] px-4 pointer-events-none"
           >
             <div className="w-full max-w-2xl pointer-events-auto">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[500px]">
               {/* Search Input */}
               <div className="p-4 border-b border-gray-100">
                 <div className="relative">
@@ -181,19 +161,29 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   )}
                 </div>
 
-                {/* Category Tabs */}
-                <div className="flex gap-2 mt-4">
-                  {categories.map((cat) => (
+                {/* Category Filter Tabs */}
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <button
+                    onClick={() => setActiveFilter('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter === 'all'
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    All Events
+                  </button>
+                  {categories.map((category) => (
                     <button
-                      key={cat.key}
-                      onClick={() => setActiveCategory(cat.key)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        activeCategory === cat.key
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      key={category}
+                      onClick={() => setActiveFilter(category.toLowerCase())}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeFilter === category.toLowerCase()
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
-                      {cat.label}
+                      {category}
                     </button>
                   ))}
                 </div>
@@ -207,14 +197,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 ) : searchQuery ? (
                   /* Search Results */
                   <div className="p-4">
-                    {results.events.length === 0 && results.artists.length === 0 ? (
+                    {filteredEvents.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         No results found for "{searchQuery}"
+                        {activeFilter !== 'all' && ` in ${activeFilter}`}
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
-                        {/* Events Results */}
-                        {results.events.slice(0, 6).map((event) => (
+                        {filteredEvents.slice(0, 8).map((event) => (
                           <Link
                             key={event.id}
                             href={`/event/${event.id}`}
@@ -234,27 +224,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                               <p className="font-semibold text-gray-900 text-sm line-clamp-1">
                                 {event.title}
                               </p>
-                              <p className="text-xs text-gray-500">Event</p>
-                            </div>
-                          </Link>
-                        ))}
-
-                        {/* Artists Results */}
-                        {results.artists.slice(0, 4).map((artist) => (
-                          <Link
-                            key={artist.id}
-                            href={`/artists`}
-                            onClick={onClose}
-                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                          >
-                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
-                              {artist.name.charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm line-clamp-1">
-                                {artist.name}
-                              </p>
-                              <p className="text-xs text-gray-500">Artist</p>
+                              <p className="text-xs text-gray-500">{event.category || 'Event'}</p>
                             </div>
                           </Link>
                         ))}
@@ -266,56 +236,43 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-4">
                       <TrendingUp className="h-4 w-4 text-purple-500" />
-                      <h3 className="font-semibold text-gray-900">Trending</h3>
+                      <h3 className="font-semibold text-gray-900">
+                        {activeFilter === 'all' ? 'Trending' : `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Events`}
+                      </h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Trending Events */}
-                      {trendingEvents.map((event) => (
-                        <Link
-                          key={event.id}
-                          href={`/event/${event.id}`}
-                          onClick={onClose}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                        >
-                          <img
-                            src={getValidImage(event)}
-                            alt={event.title}
-                            className="w-14 h-14 rounded-lg object-cover bg-gray-200"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.src = getDefaultImage(event.title)
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-sm line-clamp-1">
-                              {event.title}
-                            </p>
-                            <p className="text-xs text-gray-500">Event</p>
-                          </div>
-                        </Link>
-                      ))}
-
-                      {/* Trending Artists */}
-                      {trendingArtists.map((artist) => (
-                        <Link
-                          key={artist.id}
-                          href={`/artists`}
-                          onClick={onClose}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
-                            {artist.name.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-sm line-clamp-1">
-                              {artist.name}
-                            </p>
-                            <p className="text-xs text-gray-500">Artist</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
+                    {trendingEvents.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No events found in this category
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {trendingEvents.map((event) => (
+                          <Link
+                            key={event.id}
+                            href={`/event/${event.id}`}
+                            onClick={onClose}
+                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                          >
+                            <img
+                              src={getValidImage(event)}
+                              alt={event.title}
+                              className="w-14 h-14 rounded-lg object-cover bg-gray-200"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = getDefaultImage(event.title)
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 text-sm line-clamp-1">
+                                {event.title}
+                              </p>
+                              <p className="text-xs text-gray-500">{event.category || 'Event'}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

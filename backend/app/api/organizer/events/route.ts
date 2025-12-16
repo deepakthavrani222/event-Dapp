@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       timezone,
       royaltySettings,
       promotionSettings,
+      auctionSettings,
       venueFee,
     } = body;
 
@@ -69,6 +70,15 @@ export async function POST(request: NextRequest) {
       socialLinks: promotionSettings?.socialLinks || {},
     };
 
+    // Parse auction settings (organizer controls whether auctions are allowed)
+    const parsedAuctionSettings = {
+      auctionsEnabled: auctionSettings?.auctionsEnabled || false,
+      maxAuctionPriceCapPercent: Math.min(300, Math.max(100, auctionSettings?.maxAuctionPriceCapPercent || 150)),
+      organizerRoyaltyPercent: auctionSettings?.organizerRoyaltyPercent || 500, // 5% in basis points
+      artistRoyaltyPercent: auctionSettings?.artistRoyaltyPercent || 1000, // 10% in basis points
+      artistWallet: auctionSettings?.artistWallet || '',
+    };
+
     // Calculate total tickets for auto-approval check
     const ticketTypesData = body.ticketTypes || [];
     const totalTickets = ticketTypesData.reduce((sum: number, tt: any) => sum + (tt.totalSupply || 0), 0);
@@ -93,6 +103,7 @@ export async function POST(request: NextRequest) {
       status: isAutoApproved ? 'approved' : 'pending',
       royaltySettings: parsedRoyaltySettings,
       promotionSettings: parsedPromotionSettings,
+      auctionSettings: parsedAuctionSettings,
       venueFee: venueFee || 0,
       totalRevenue: 0,
       totalRoyaltiesEarned: 0,
@@ -149,6 +160,7 @@ export async function POST(request: NextRequest) {
         isAutoApproved,
         royaltySettings: event.royaltySettings,
         promotionSettings: event.promotionSettings,
+        auctionSettings: event.auctionSettings,
         ticketTypes: createdTicketTypes,
       },
       message: isAutoApproved 

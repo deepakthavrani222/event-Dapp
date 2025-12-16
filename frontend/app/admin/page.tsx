@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { TwoFactorVerifyModal } from '@/components/shared/two-factor-auth';
 import { toast } from '@/hooks/use-toast';
+import { AdminWalletCard } from '@/components/admin/AdminWalletCard';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -2151,6 +2152,8 @@ function SettingsTab() {
   const [logSearch, setLogSearch] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Feature toggles - would come from API
   const [features, setFeatures] = useState({
@@ -2162,30 +2165,55 @@ function SettingsTab() {
     instantWithdrawals: false,
   });
 
-  // Admin list - would come from API
-  const [admins, setAdmins] = useState([
-    { id: '1', name: 'You (Owner)', email: 'owner@ticketchain.com', wallet: '0x7a23...9f4b', role: 'Super Admin', addedAt: '2024-01-01', lastActive: 'Now' },
-    { id: '2', name: 'Rahul Sharma', email: 'rahul@ticketchain.com', wallet: '0x8b34...a5c6', role: 'Admin', addedAt: '2024-06-15', lastActive: '2 hours ago' },
-    { id: '3', name: 'Priya Patel', email: 'priya@ticketchain.com', wallet: '0x9c45...b7d8', role: 'Moderator', addedAt: '2024-09-20', lastActive: '1 day ago' },
-  ]);
+  // Admin list - from API
+  const [admins, setAdmins] = useState<any[]>([]);
 
-  // Activity logs - would come from API
-  const allLogs = [
-    { id: '1', action: 'Event Approved', target: 'Tech Conference 2025', user: 'Rahul Sharma', timestamp: '2025-01-10 14:32', type: 'approval' },
-    { id: '2', action: 'User Blocked', target: 'spam@fake.com', user: 'Priya Patel', timestamp: '2025-01-10 12:15', type: 'moderation' },
-    { id: '3', action: 'Fee Changed', target: 'Platform Fee: 10% → 8%', user: 'You (Owner)', timestamp: '2025-01-09 18:45', type: 'settings' },
-    { id: '4', action: 'Event Rejected', target: 'Suspicious Event XYZ', user: 'Rahul Sharma', timestamp: '2025-01-09 16:20', type: 'approval' },
-    { id: '5', action: 'Withdrawal Processed', target: '₹5,00,000 to HDFC', user: 'You (Owner)', timestamp: '2025-01-08 10:00', type: 'finance' },
-    { id: '6', action: 'Admin Added', target: 'priya@ticketchain.com', user: 'You (Owner)', timestamp: '2024-09-20 09:30', type: 'admin' },
-    { id: '7', action: 'Feature Enabled', target: 'Soulbound Tickets', user: 'You (Owner)', timestamp: '2024-08-15 11:00', type: 'settings' },
-    { id: '8', action: 'Event Approved', target: 'Music Festival Night', user: 'Priya Patel', timestamp: '2025-01-07 15:45', type: 'approval' },
-  ];
+  // Activity logs - from API
+  const [allLogs, setAllLogs] = useState<any[]>([]);
 
-  const filteredLogs = allLogs.filter(log => 
-    log.action.toLowerCase().includes(logSearch.toLowerCase()) ||
-    log.target.toLowerCase().includes(logSearch.toLowerCase()) ||
-    log.user.toLowerCase().includes(logSearch.toLowerCase())
-  );
+  // Fetch admins on mount
+  useEffect(() => {
+    if (activeSection === 'admins') {
+      fetchAdmins();
+    }
+  }, [activeSection]);
+
+  // Fetch logs on mount or search change
+  useEffect(() => {
+    if (activeSection === 'logs') {
+      fetchLogs();
+    }
+  }, [activeSection, logSearch]);
+
+  const fetchAdmins = async () => {
+    setLoadingAdmins(true);
+    try {
+      const response = await apiClient.request('/api/admin/admins');
+      if (response.success) {
+        setAdmins(response.admins);
+      }
+    } catch (error) {
+      console.error('Failed to fetch admins:', error);
+    } finally {
+      setLoadingAdmins(false);
+    }
+  };
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const response = await apiClient.request(`/api/admin/audit?search=${encodeURIComponent(logSearch)}&limit=50`);
+      if (response.success) {
+        setAllLogs(response.logs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const filteredLogs = allLogs;
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -2194,11 +2222,52 @@ function SettingsTab() {
     setSaving(false);
   };
 
-  const handleAddAdmin = () => {
+  const handleAddAdmin = async () => {
     if (newAdminEmail) {
-      setAdmins([...admins, { id: Date.now().toString(), name: 'New Admin', email: newAdminEmail, wallet: 'Pending...', role: 'Moderator', addedAt: new Date().toISOString().split('T')[0], lastActive: 'Never' }]);
-      setNewAdminEmail('');
-      setShowAddAdmin(false);
+      try {
+        const response = await apiClient.request('/api/admin/admins', {
+          method: 'POST',
+          body: JSON.stringify({ email: newAdminEmail }),
+        });
+        if (response.success) {
+          await fetchAdmins();
+          setNewAdminEmail('');
+          setShowAddAdmin(false);
+          toast({
+            title: 'Admin Added',
+            description: `${newAdminEmail} has been added as admin.`,
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: 'Failed to add admin',
+          description: error.message || 'Please try again.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleRemoveAdmin = async (adminId: string) => {
+    if (!confirm('Are you sure you want to remove this admin?')) return;
+    
+    try {
+      const response = await apiClient.request(`/api/admin/admins?id=${adminId}`, {
+        method: 'DELETE',
+      });
+      if (response.success) {
+        await fetchAdmins();
+        toast({
+          title: 'Admin Removed',
+          description: 'Admin access has been revoked.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to remove admin',
+        description: error.message || 'Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -2333,28 +2402,7 @@ function SettingsTab() {
         </CardContent>
       </Card>
 
-      <Card className="border-purple-500/30 bg-purple-500/10">
-        <CardHeader>
-          <CardTitle className="text-purple-300 flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Admin Wallet
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="p-3 bg-white/5 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Connected Wallet</p>
-            <p className="text-sm text-white font-mono">0x7a23...9f4b</p>
-          </div>
-          <div className="p-3 bg-white/5 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Platform Treasury</p>
-            <p className="text-lg font-bold text-white">45.23 ETH</p>
-            <p className="text-sm text-gray-400">≈ ₹75,00,000</p>
-          </div>
-          <Button variant="outline" className="w-full border-purple-500/50 text-purple-300">
-            View on Etherscan
-          </Button>
-        </CardContent>
-      </Card>
+      <AdminWalletCard />
 
       <Card className="border-white/20 bg-gray-900/80">
         <CardHeader>
@@ -2447,40 +2495,55 @@ function SettingsTab() {
             </Button>
           </div>
           <div className="grid gap-4">
-            {admins.map(admin => (
-              <Card key={admin.id} className={`border-white/20 bg-gray-900/80 ${admin.role === 'Super Admin' ? 'ring-2 ring-purple-500/50' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-                        {admin.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-medium text-white flex items-center gap-2">
-                          {admin.name}
-                          {admin.role === 'Super Admin' && <Crown className="h-4 w-4 text-yellow-400" />}
-                        </p>
-                        <p className="text-sm text-gray-400">{admin.email}</p>
-                        <p className="text-xs text-gray-500 font-mono">{admin.wallet}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={admin.role === 'Super Admin' ? 'bg-purple-500/20 text-purple-300' : admin.role === 'Admin' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-gray-500/20 text-gray-300'}>
-                        {admin.role}
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-1">Active: {admin.lastActive}</p>
-                      <p className="text-xs text-gray-500">Added: {admin.addedAt}</p>
-                    </div>
-                  </div>
-                  {admin.role !== 'Super Admin' && (
-                    <div className="flex gap-2 mt-4 justify-end">
-                      <Button size="sm" variant="outline" className="border-white/20">Change Role</Button>
-                      <Button size="sm" variant="outline" className="border-red-500/50 text-red-400">Remove</Button>
-                    </div>
-                  )}
-                </CardContent>
+            {loadingAdmins ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+                <span className="ml-2 text-gray-400">Loading admins...</span>
+              </div>
+            ) : admins.length === 0 ? (
+              <Card className="border-white/20 bg-gray-900/80 p-8 text-center">
+                <Users className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                <p className="text-gray-400">No admin users found</p>
               </Card>
-            ))}
+            ) : (
+              admins.map(admin => (
+                <Card key={admin.id} className={`border-white/20 bg-gray-900/80 ${admin.role === 'Super Admin' ? 'ring-2 ring-purple-500/50' : ''}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                          {admin.name?.charAt(0) || 'A'}
+                        </div>
+                        <div>
+                          <p className="font-medium text-white flex items-center gap-2">
+                            {admin.name || 'Admin User'}
+                            {admin.isCurrentUser && <span className="text-xs text-purple-400">(You)</span>}
+                            {admin.role === 'Super Admin' && <Crown className="h-4 w-4 text-yellow-400" />}
+                          </p>
+                          <p className="text-sm text-gray-400">{admin.email}</p>
+                          <p className="text-xs text-gray-500 font-mono">{admin.wallet}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={admin.role === 'Super Admin' ? 'bg-purple-500/20 text-purple-300' : admin.role === 'Admin' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-gray-500/20 text-gray-300'}>
+                          {admin.role}
+                        </Badge>
+                        <p className="text-xs text-gray-400 mt-1">Active: {admin.lastActive}</p>
+                        <p className="text-xs text-gray-500">Added: {admin.addedAt}</p>
+                        {admin.loginCount > 0 && <p className="text-xs text-gray-500">Logins: {admin.loginCount}</p>}
+                      </div>
+                    </div>
+                    {!admin.isCurrentUser && admin.role !== 'Super Admin' && (
+                      <div className="flex gap-2 mt-4 justify-end">
+                        <Button size="sm" variant="outline" className="border-red-500/50 text-red-400" onClick={() => handleRemoveAdmin(admin.id)}>
+                          Remove Admin
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
 
           {/* Add Admin Modal */}
@@ -2556,30 +2619,49 @@ function SettingsTab() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {filteredLogs.map(log => (
-                <div key={log.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                  <div className={`p-2 rounded-full ${
-                    log.type === 'approval' ? 'bg-green-500/20 text-green-400' :
-                    log.type === 'moderation' ? 'bg-red-500/20 text-red-400' :
-                    log.type === 'settings' ? 'bg-purple-500/20 text-purple-400' :
-                    log.type === 'finance' ? 'bg-cyan-500/20 text-cyan-400' :
-                    'bg-orange-500/20 text-orange-400'
-                  }`}>
-                    {log.type === 'approval' ? <CheckCircle className="h-4 w-4" /> :
-                     log.type === 'moderation' ? <AlertTriangle className="h-4 w-4" /> :
-                     log.type === 'settings' ? <Settings className="h-4 w-4" /> :
-                     log.type === 'finance' ? <Wallet className="h-4 w-4" /> :
-                     <Users className="h-4 w-4" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-white"><span className="font-medium">{log.action}</span>: {log.target}</p>
-                    <p className="text-xs text-gray-400">by {log.user}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">{log.timestamp}</p>
-                  </div>
+              {loadingLogs ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+                  <span className="ml-2 text-gray-400">Loading activity logs...</span>
                 </div>
-              ))}
+              ) : filteredLogs.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                  <p className="text-gray-400">{logSearch ? 'No logs match your search' : 'No activity logs yet'}</p>
+                </div>
+              ) : (
+                filteredLogs.map(log => (
+                  <div key={log.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                    <div className={`p-2 rounded-full ${
+                      log.type === 'approval' || log.type === 'event' ? 'bg-green-500/20 text-green-400' :
+                      log.type === 'moderation' || log.type === 'user' ? 'bg-red-500/20 text-red-400' :
+                      log.type === 'settings' ? 'bg-purple-500/20 text-purple-400' :
+                      log.type === 'finance' || log.type === 'transaction' ? 'bg-cyan-500/20 text-cyan-400' :
+                      log.type === 'admin' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-orange-500/20 text-orange-400'
+                    }`}>
+                      {log.type === 'approval' || log.type === 'event' ? <CheckCircle className="h-4 w-4" /> :
+                       log.type === 'moderation' || log.type === 'user' ? <AlertTriangle className="h-4 w-4" /> :
+                       log.type === 'settings' ? <Settings className="h-4 w-4" /> :
+                       log.type === 'finance' || log.type === 'transaction' ? <Wallet className="h-4 w-4" /> :
+                       log.type === 'admin' ? <Shield className="h-4 w-4" /> :
+                       <Users className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white"><span className="font-medium">{log.action}</span>{log.target && log.target !== '-' ? `: ${log.target}` : ''}</p>
+                      <p className="text-xs text-gray-400">by {log.user}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-400">{log.timestamp}</p>
+                      {log.severity && log.severity !== 'low' && (
+                        <Badge className={log.severity === 'high' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'}>
+                          {log.severity}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

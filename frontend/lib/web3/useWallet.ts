@@ -225,6 +225,54 @@ export function useWallet() {
     }
   }, [wallet.isConnected, wallet.address]);
 
+  // Purchase ticket via smart contract
+  const purchaseTicketOnChain = useCallback(async (
+    contractAddress: string,
+    tokenId: number,
+    amount: number,
+    priceInEth: string
+  ) => {
+    if (!wallet.isConnected || !wallet.address) {
+      setError('Wallet not connected');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const valueInWei = '0x' + BigInt(Math.floor(parseFloat(priceInEth) * 1e18)).toString(16);
+      
+      // Encode purchaseTicket(uint256 tokenId, uint256 amount) function call
+      // Function selector: keccak256("purchaseTicket(uint256,uint256)") = 0x... first 4 bytes
+      const functionSelector = '0x4faa8a26'; // purchaseTicket(uint256,uint256)
+      const encodedTokenId = tokenId.toString(16).padStart(64, '0');
+      const encodedAmount = amount.toString(16).padStart(64, '0');
+      const data = functionSelector + encodedTokenId + encodedAmount;
+      
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: wallet.address,
+          to: contractAddress,
+          value: valueInWei,
+          data: data,
+        }],
+      });
+
+      return txHash;
+    } catch (err: any) {
+      if (err.code === 4001) {
+        setError('Transaction rejected by user.');
+      } else {
+        setError('Transaction failed. Please try again.');
+      }
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [wallet.isConnected, wallet.address]);
+
   const signMessage = useCallback(async (message: string) => {
     if (!wallet.isConnected || !wallet.address) {
       setError('Wallet not connected');
@@ -255,6 +303,7 @@ export function useWallet() {
     disconnect,
     switchNetwork,
     sendTransaction,
+    purchaseTicketOnChain,
     signMessage,
     refreshBalance: () => wallet.address && fetchBalance(wallet.address),
   };

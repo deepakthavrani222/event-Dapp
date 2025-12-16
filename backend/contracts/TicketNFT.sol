@@ -71,23 +71,156 @@ contract TicketNFT is ERC1155, ERC1155Supply, AccessControl, Pausable, Reentranc
     }
     
     /**
-     * @dev Create a new token type with max supply
+     * @dev Create a new token type with max supply (basic version without price)
      * @param tokenId The token ID to create
-     * @param maxSupply Maximum number of tokens that can be minted
+     * @param maxSupplyAmount Maximum number of tokens that can be minted
      * @param tokenURI Metadata URI for this token
      */
     function createToken(
         uint256 tokenId,
-        uint256 maxSupply,
+        uint256 maxSupplyAmount,
         string memory tokenURI
     ) external onlyRole(MINTER_ROLE) {
         require(_maxSupply[tokenId] == 0, "Token already exists");
-        require(maxSupply > 0, "Max supply must be greater than 0");
+        require(maxSupplyAmount > 0, "Max supply must be greater than 0");
         
-        _maxSupply[tokenId] = maxSupply;
+        _maxSupply[tokenId] = maxSupplyAmount;
         _tokenURIs[tokenId] = tokenURI;
         
-        emit TokenCreated(tokenId, maxSupply, tokenURI);
+        emit TokenCreated(tokenId, maxSupplyAmount, tokenURI);
+    }
+
+    /**
+     * @dev Create a new token type with price and organizer for ETH purchases
+     * @param tokenId The token ID to create
+     * @param maxSupplyAmount Maximum number of tokens that can be minted
+     * @param tokenURI Metadata URI for this token
+     * @param priceInWei Price per ticket in Wei
+     * @param organizer Address of the event organizer to receive payments
+     */
+    function createTokenWithPrice(
+        uint256 tokenId,
+        uint256 maxSupplyAmount,
+        string memory tokenURI,
+        uint256 priceInWei,
+        address payable organizer
+    ) external onlyRole(MINTER_ROLE) {
+        require(_maxSupply[tokenId] == 0, "Token already exists");
+        require(maxSupplyAmount > 0, "Max supply must be greater than 0");
+        require(organizer != address(0), "Invalid organizer address");
+        
+        _maxSupply[tokenId] = maxSupplyAmount;
+        _tokenURIs[tokenId] = tokenURI;
+        _tokenPrices[tokenId] = priceInWei;
+        _tokenOrganizers[tokenId] = organizer;
+        
+        emit TokenCreated(tokenId, maxSupplyAmount, tokenURI);
+        emit TokenPriceSet(tokenId, priceInWei);
+    }
+
+    /**
+     * @dev Set price for a token (can be updated by price manager)
+     * @param tokenId The token ID
+     * @param priceInWei Price per ticket in Wei
+     */
+    function setTokenPrice(uint256 tokenId, uint256 priceInWei) external onlyRole(PRICE_MANAGER_ROLE) {
+        require(_maxSupply[tokenId] > 0, "Token does not exist");
+        _tokenPrices[tokenId] = priceInWei;
+        emit TokenPriceSet(tokenId, priceInWei);
+    }
+
+    /**
+     * @dev Set organizer wallet for a token
+     * @param tokenId The token ID
+     * @param organizer Address of the event organizer
+     */
+    function setTokenOrganizer(uint256 tokenId, address payable organizer) external onlyRole(MINTER_ROLE) {
+        require(_maxSupply[tokenId] > 0, "Token does not exist");
+        require(organizer != address(0), "Invalid organizer address");
+        _tokenOrganizers[tokenId] = organizer;
+    }
+
+    /**
+     * @dev Purchase tickets with ETH - Main function for buyers
+     * ETH is split between platform (5%) and organizer (95%)
+     * @param tokenId The token ID to purchase
+     * @param amount Number of tickets to purchase
+     */
+    function purchaseTicket(uint256 tokenId, uint256 amount) external payable whenNotPaused nonReentrant {
+        require(_maxSupply[tokenId] > 0, "Token does not exist");
+        require(amount > 0, "Amount must be greater than 0");
+        require(totalSupply(tokenId) + amount <= _maxSupply[tokenId], "Exceeds max supply");
+        
+        uint256 pricePerTicket = _tokenPrices[tokenId];
+        require(pricePerTicket > 0, "Token not available for purchase");
+        
+        uint256 totalPrice = pricePerTicket * amount;
+        require(msg.value >= totalPrice, "Insufficient ETH sent");
+        
+        address payable organizer = _tokenOrganizers[tokenId];
+        require(organizer != address(0), "Organizer not set");
+        
+        // Calculate fees
+        uint256 platformFee = (totalPrice * platformFeePercent) / 10000;
+        uint256 organizerAmount = totalPrice - platformFee;
+        
+        // Transfer to platform
+        if (platformFee > 0) {
+            (bool platformSuccess, ) = platformWallet.call{value: platformFee}("");
+            require(platformSuccess, "Platform fee transfer failed");
+        }
+        
+        // Transfer to organizer
+        if (organizerAmount > 0) {
+            (bool organizerSuccess, ) = organizer.call{value: organizerAmount}("");
+            require(organizerSuccess, "Organizer payment failed");
+        }
+        
+        // Refund excess ETH
+        if (msg.value > totalPrice) {
+            (bool refundSuccess, ) = payable(msg.sender).call{value: msg.value - totalPrice}("");
+            require(refundSuccess, "Refund failed");
+        }
+        
+        // Mint tickets to buyer
+        _mint(msg.sender, tokenId, amount, "");
+        
+        emit TicketPurchased(msg.sender, tokenId, amount, totalPrice);
+        emit TicketMinted(msg.sender, tokenId, amount);
+    }
+
+    /**
+     * @dev Get token price
+     */
+    function getTokenPrice(uint256 tokenId) external view returns (uint256) {
+        return _tokenPrices[tokenId];
+    }
+
+    /**
+     * @dev Get token organizer
+     */
+    function getTokenOrganizer(uint256 tokenId) external view returns (address) {
+        return _tokenOrganizers[tokenId];
+    }
+
+    /**
+     * @dev Update platform wallet
+     */
+    function setPlatformWallet(address payable newWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newWallet != address(0), "Invalid wallet address");
+        address oldWallet = platformWallet;
+        platformWallet = newWallet;
+        emit PlatformWalletUpdated(oldWallet, newWallet);
+    }
+
+    /**
+     * @dev Update platform fee percentage
+     */
+    function setPlatformFee(uint256 newFeePercent) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newFeePercent <= 2000, "Fee too high"); // Max 20%
+        uint256 oldFee = platformFeePercent;
+        platformFeePercent = newFeePercent;
+        emit PlatformFeeUpdated(oldFee, newFeePercent);
     }
     
     /**

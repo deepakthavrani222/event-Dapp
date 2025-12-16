@@ -5,7 +5,8 @@ import { apiClient } from "@/lib/api/client"
 import type { Event } from "@/lib/types"
 import { PublicHeader } from "@/components/shared/public-header"
 import { EnhancedEventCarousel } from "@/components/shared/enhanced-event-carousel"
-import { IntegratedArtistHub } from "@/components/shared/integrated-artist-hub"
+import { LiveAuctionsSection } from "@/components/home/LiveAuctionsSection"
+import { EventFilters, FilterState } from "@/components/home/EventFilters"
 
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronLeft, MapPin, Calendar } from "lucide-react"
@@ -63,7 +64,7 @@ export default function HomePage() {
         setCurrentSlide(0)
         // Re-enable transition after instant jump
         setTimeout(() => setIsTransitioning(false), 50)
-      }, 1000) // Match transition duration
+      }, 1500) // Match transition duration
       return () => clearTimeout(timeout)
     }
   }, [currentSlide, featuredEvents.length])
@@ -76,16 +77,95 @@ export default function HomePage() {
     setCurrentSlide((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length)
   }, [featuredEvents.length])
 
-  // Show all events without filtering
-  const filteredEvents = events
+  // Filter state
+  const [activeFilters, setActiveFilters] = useState<FilterState>({ date: null, category: null })
 
   // Get unique categories from events
   const getUniqueCategories = () => {
     const categories = [...new Set(events.map(event => event.category).filter(Boolean))]
-    return categories.slice(0, 6)
+    return categories
   }
 
   const uniqueCategories = getUniqueCategories()
+
+  // Filter events based on active filters
+  const getFilteredEvents = () => {
+    let filtered = [...events]
+
+    // Date filter
+    if (activeFilters.date) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      
+      const endOfWeek = new Date(today)
+      const dayOfWeek = today.getDay()
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+      endOfWeek.setDate(today.getDate() + daysUntilSunday)
+      endOfWeek.setHours(23, 59, 59, 999)
+
+      const saturday = new Date(today)
+      saturday.setDate(today.getDate() + (6 - dayOfWeek + 7) % 7)
+      if (dayOfWeek === 6) saturday.setDate(today.getDate())
+      saturday.setHours(0, 0, 0, 0)
+
+      filtered = filtered.filter(event => {
+        const eventDate = new Date(event.date)
+        eventDate.setHours(0, 0, 0, 0)
+
+        switch (activeFilters.date) {
+          case 'today':
+            return eventDate.getTime() === today.getTime()
+          case 'tomorrow':
+            return eventDate.getTime() === tomorrow.getTime()
+          case 'weekend':
+            return eventDate >= saturday && eventDate <= endOfWeek
+          case 'week':
+            return eventDate >= today && eventDate <= endOfWeek
+          default:
+            return true
+        }
+      })
+    }
+
+    // Category filter
+    if (activeFilters.category) {
+      filtered = filtered.filter(event => 
+        event.category?.toLowerCase() === activeFilters.category?.toLowerCase()
+      )
+    }
+
+    return filtered
+  }
+
+  const filteredEvents = getFilteredEvents()
+
+  // Handle filter change
+  const handleFilterChange = (filters: FilterState) => {
+    setActiveFilters(filters)
+  }
+
+  // Format time to 12-hour AM/PM format
+  const formatTime = (timeStr?: string, eventDate?: string) => {
+    if (timeStr) {
+      // If time is in 24-hour format like "19:00" or "7:00 PM"
+      if (timeStr.includes('AM') || timeStr.includes('PM') || timeStr.includes('am') || timeStr.includes('pm')) {
+        return timeStr.toUpperCase()
+      }
+      // Convert 24-hour to 12-hour
+      const [hours, minutes] = timeStr.split(':').map(Number)
+      const period = hours >= 12 ? 'PM' : 'AM'
+      const hour12 = hours % 12 || 12
+      return `${hour12}:${minutes?.toString().padStart(2, '0') || '00'} ${period}`
+    }
+    // Fallback to date-based time
+    if (eventDate) {
+      return new Date(eventDate).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()
+    }
+    return '7:00 PM'
+  }
 
   // Get valid image for event
   const getEventImage = (event: Event) => {
@@ -109,43 +189,45 @@ export default function HomePage() {
   }
 
   return (
-    <div className={`min-h-screen overflow-x-hidden transition-colors duration-300 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
       <PublicHeader />
-      {/* Spacer for fixed header */}
-      <div className="h-16" />
+      {/* Spacer for fixed header (h-20 = 80px) */}
+      <div className="h-20" />
       {/* Hero Section - District Style Horizontal Carousel */}
       <section className={`relative min-h-[500px] py-12 md:py-20 overflow-hidden ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAFA]'}`}>
-        {/* Light theme - Blurred event image as background */}
-        {!isDark && featuredEvents.length > 0 && (
+        {/* Blurred event image as background */}
+        {featuredEvents.length > 0 && (
           <>
             <div 
-              className="absolute inset-0 bg-cover bg-center scale-110 blur-3xl opacity-40 transition-all duration-700"
-              style={{ backgroundImage: `url(${getEventImage(featuredEvents[currentSlide % featuredEvents.length])})` }}
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-md transition-all duration-700"
+              style={{ 
+                backgroundImage: `url(${getEventImage(featuredEvents[currentSlide % featuredEvents.length])})`,
+                opacity: isDark ? 0.25 : 0.4
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA]/60 via-transparent to-[#FAFAFA]/80" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#FAFAFA]/70 via-transparent to-[#FAFAFA]/70" />
+            <div className={`absolute inset-0 ${isDark ? 'bg-[#0A0A0A]/60' : 'bg-[#FAFAFA]/50'}`} />
           </>
         )}
         
-        <div className="container px-6 md:px-12 mx-auto max-w-7xl relative z-10">
+        <div className="w-full relative z-10">
           {/* Carousel Container */}
           <div className="relative overflow-hidden">
             {/* Slides Track - moves horizontally */}
             <div 
-              className={`flex ${isTransitioning ? '' : 'transition-transform duration-1000 ease-out'}`}
+              className={`flex ${isTransitioning ? '' : 'transition-transform duration-[1500ms] ease-in-out'}`}
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
               {featuredEvents.map((event, index) => (
-                <div key={event.id || index} className="w-full flex-shrink-0">
+                <Link key={event.id || index} href={`/event/${event.id}`} className="w-full flex-shrink-0 px-8 md:px-16 lg:px-24 cursor-pointer">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                     {/* Left Side - Content */}
                     <div className="space-y-4 order-2 lg:order-1">
                       {/* Date & Time */}
-                      <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      <h2 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {new Date(event.date).toLocaleDateString('en-IN', { 
                           weekday: 'short', day: 'numeric', month: 'short'
-                        })}, {event.time || '7:00 PM'}
-                      </p>
+                        })}, {formatTime(event.time, event.date)}
+                      </h2>
 
                       {/* Title */}
                       <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -153,7 +235,7 @@ export default function HomePage() {
                       </h1>
 
                       {/* Venue */}
-                      <p className={`text-base md:text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className={`text-lg md:text-xl font-semibold ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>
                         {typeof event.venue === 'object' 
                           ? `${event.venue?.name || ''}${event.venue?.city ? `, ${event.venue.city}` : (event.city ? `, ${event.city}` : '')}`
                           : `${event.venue || ''}${event.city ? `, ${event.city}` : ''}`
@@ -161,30 +243,28 @@ export default function HomePage() {
                       </p>
 
                       {/* Price */}
-                      <p className={`text-lg font-medium ${isDark ? 'text-[#A78BFA]' : 'text-[#E23744]'}`}>
+                      <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-[#A78BFA]' : 'text-gray-900'}`}>
                         ₹{event.price?.toLocaleString('en-IN')} onwards
                       </p>
 
                       {/* Book Button */}
-                      <div className="pt-2">
-                        <Link href={`/event/${event.id}`}>
-                          <Button
-                            size="lg"
-                            className={`h-12 px-8 rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${
-                              isDark 
-                                ? 'bg-white text-black hover:bg-gray-100' 
-                                : 'bg-[#1a1a1a] text-white hover:bg-black'
-                            }`}
-                          >
-                            Book tickets
-                          </Button>
-                        </Link>
+                      <div className="pt-3">
+                        <Button
+                          size="lg"
+                          className={`h-14 px-10 text-lg rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${
+                            isDark 
+                              ? 'bg-white text-black hover:bg-gray-100' 
+                              : 'bg-[#1a1a1a] text-white hover:bg-black'
+                          }`}
+                        >
+                          Book tickets
+                        </Button>
                       </div>
                     </div>
 
                     {/* Right Side - Event Image Card */}
                     <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
-                      <div className={`relative w-full max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${
+                      <div className={`relative w-full max-w-[320px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${
                         isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'
                       }`}>
                         <img
@@ -201,40 +281,38 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
               {/* Clone of first slide for infinite loop */}
               {featuredEvents.length > 0 && (
-                <div key="clone-first" className="w-full flex-shrink-0">
+                <Link key="clone-first" href={`/event/${featuredEvents[0].id}`} className="w-full flex-shrink-0 px-8 md:px-16 lg:px-24 cursor-pointer">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                     <div className="space-y-4 order-2 lg:order-1">
-                      <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      <h2 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {new Date(featuredEvents[0].date).toLocaleDateString('en-IN', { 
                           weekday: 'short', day: 'numeric', month: 'short'
-                        })}, {featuredEvents[0].time || '7:00 PM'}
-                      </p>
+                        })}, {formatTime(featuredEvents[0].time, featuredEvents[0].date)}
+                      </h2>
                       <h1 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {featuredEvents[0].title}
                       </h1>
-                      <p className={`text-base md:text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className={`text-lg md:text-xl font-semibold ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>
                         {typeof featuredEvents[0].venue === 'object' 
                           ? `${featuredEvents[0].venue?.name || ''}${featuredEvents[0].venue?.city ? `, ${featuredEvents[0].venue.city}` : ''}`
                           : `${featuredEvents[0].venue || ''}${featuredEvents[0].city ? `, ${featuredEvents[0].city}` : ''}`
                         }
                       </p>
-                      <p className={`text-lg font-medium ${isDark ? 'text-[#A78BFA]' : 'text-[#E23744]'}`}>
+                      <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-[#A78BFA]' : 'text-gray-900'}`}>
                         ₹{featuredEvents[0].price?.toLocaleString('en-IN')} onwards
                       </p>
-                      <div className="pt-2">
-                        <Link href={`/event/${featuredEvents[0].id}`}>
-                          <Button size="lg" className={`h-12 px-8 rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${isDark ? 'bg-white text-black hover:bg-gray-100' : 'bg-[#1a1a1a] text-white hover:bg-black'}`}>
-                            Book tickets
-                          </Button>
-                        </Link>
+                      <div className="pt-3">
+                        <Button size="lg" className={`h-14 px-10 text-lg rounded-lg font-semibold shadow-lg transition-all hover:scale-105 ${isDark ? 'bg-white text-black hover:bg-gray-100' : 'bg-[#1a1a1a] text-white hover:bg-black'}`}>
+                          Book tickets
+                        </Button>
                       </div>
                     </div>
                     <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
-                      <div className={`relative w-full max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'}`}>
+                      <div className={`relative w-full max-w-[320px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'shadow-purple-500/20' : 'shadow-gray-400/30'}`}>
                         <img src={getEventImage(featuredEvents[0])} alt={featuredEvents[0].title} className="w-full h-full object-cover" />
                         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
                         <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold ${isDark ? 'bg-[#A78BFA] text-white' : 'bg-white/90 text-gray-900'}`}>
@@ -243,7 +321,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               )}
             </div>
           </div>
@@ -303,26 +381,62 @@ export default function HomePage() {
 
 
 
-      <section className="container py-20 px-12 mx-auto max-w-7xl space-y-16">
-        {loading ? (
-          <div className={`text-center py-12 ${isDark ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>Loading events...</div>
-        ) : filteredEvents.length === 0 ? (
-          <div className={`text-center py-12 ${isDark ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>No events found</div>
-        ) : (
-          <>
-            {/* All Events - First */}
+      {/* All Events Title - Scrolls away */}
+      <div className={`${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+        <div className="container px-6 md:px-12 mx-auto max-w-7xl">
+          <h2 className={`text-xl md:text-2xl font-bold pt-6 pb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            All Events
+          </h2>
+        </div>
+      </div>
+
+      {/* Sticky Filter Bar - District Style */}
+      <div 
+        className={`sticky top-[80px] z-40 pt-3 pb-3 border-b ${
+          isDark ? 'bg-[#0A0A0A] border-gray-800' : 'bg-white border-gray-100'
+        }`}
+        style={{ position: '-webkit-sticky' }}
+      >
+        <div className="container px-6 md:px-12 mx-auto max-w-7xl">
+          <EventFilters 
+            onFilterChange={handleFilterChange}
+            categories={uniqueCategories}
+          />
+        </div>
+      </div>
+
+      {/* Events Section */}
+      <section className="container py-8 px-6 md:px-12 mx-auto max-w-7xl">
+
+        {/* Filtered Events Grid */}
+        <div>
+          {loading ? (
+            <div className={`text-center py-12 ${isDark ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>Loading events...</div>
+          ) : filteredEvents.length === 0 ? (
+            <div className={`text-center py-12 ${isDark ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>
+              <p className="text-lg mb-2">No events found</p>
+              <p className="text-sm">Try adjusting your filters</p>
+            </div>
+          ) : (
             <EnhancedEventCarousel
-              title="All Events"
-              subtitle="Browse all available events"
+              title=""
+              subtitle=""
               events={filteredEvents}
               variant="default"
             />
+          )}
+        </div>
+      </section>
 
-            {/* Comedy Events - Second */}
+      {/* Category Sections */}
+      <section className="container py-12 px-6 md:px-12 mx-auto max-w-7xl space-y-16">
+        {!loading && events.length > 0 && !activeFilters.category && (
+          <>
+            {/* Comedy Events */}
             <EnhancedEventCarousel
               title="Comedy Events"
               subtitle="Best comedy experiences"
-              events={filteredEvents}
+              events={events}
               variant="default"
               categoryFilter="Comedy"
             />
@@ -330,32 +444,33 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Integrated Artist Hub - Third */}
-      <IntegratedArtistHub />
+      {/* Live Auctions Section */}
+      <LiveAuctionsSection />
 
-      <section className="container py-20 px-12 mx-auto max-w-7xl space-y-16">
-        {!loading && filteredEvents.length > 0 && (
+      <section className="container py-12 px-6 md:px-12 mx-auto max-w-7xl space-y-16">
+        {!loading && events.length > 0 && !activeFilters.category && (
           <>
             {/* Other Category Sections */}
             {uniqueCategories
               .filter(category => category.toLowerCase() !== 'comedy')
+              .slice(0, 5)
               .map((category) => (
                 <EnhancedEventCarousel
                   key={category}
                   title={`${category} Events`}
                   subtitle={`Best ${category.toLowerCase()} experiences`}
-                  events={filteredEvents}
+                  events={events}
                   variant="default"
                   categoryFilter={category}
                 />
               ))}
 
             {/* Trending Now */}
-            {filteredEvents.length > 8 && (
+            {events.length > 8 && (
               <EnhancedEventCarousel
                 title="Trending Now"
                 subtitle="🔥 Most popular events this week"
-                events={filteredEvents.slice(8, 16)}
+                events={events.slice(8, 16)}
                 variant="trending"
               />
             )}

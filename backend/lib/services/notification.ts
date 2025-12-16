@@ -5,7 +5,12 @@ const NotificationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { 
     type: String, 
-    enum: ['TICKET_SOLD', 'ROYALTY_EARNED', 'WITHDRAWAL_COMPLETE', 'EVENT_APPROVED', 'EVENT_REJECTED', 'MILESTONE', 'SYSTEM'],
+    enum: [
+      'TICKET_SOLD', 'ROYALTY_EARNED', 'WITHDRAWAL_COMPLETE', 
+      'EVENT_APPROVED', 'EVENT_REJECTED', 'MILESTONE', 'SYSTEM',
+      // Auction notifications
+      'AUCTION_BID', 'AUCTION_OUTBID', 'AUCTION_WON', 'AUCTION_ENDED', 'AUCTION_SOLD'
+    ],
     required: true 
   },
   title: { type: String, required: true },
@@ -17,9 +22,14 @@ const NotificationSchema = new mongoose.Schema({
 
 export const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
 
+export type NotificationType = 
+  | 'TICKET_SOLD' | 'ROYALTY_EARNED' | 'WITHDRAWAL_COMPLETE' 
+  | 'EVENT_APPROVED' | 'EVENT_REJECTED' | 'MILESTONE' | 'SYSTEM'
+  | 'AUCTION_BID' | 'AUCTION_OUTBID' | 'AUCTION_WON' | 'AUCTION_ENDED' | 'AUCTION_SOLD';
+
 export interface NotificationData {
   userId: string;
-  type: 'TICKET_SOLD' | 'ROYALTY_EARNED' | 'WITHDRAWAL_COMPLETE' | 'EVENT_APPROVED' | 'EVENT_REJECTED' | 'MILESTONE' | 'SYSTEM';
+  type: NotificationType;
   title: string;
   message: string;
   data?: Record<string, any>;
@@ -155,5 +165,70 @@ export async function notifyWithdrawalComplete(organizerId: string, amount: numb
     title: '💸 Withdrawal Complete!',
     message: `₹${amount} has been sent to your ${method} account`,
     data: { amount, method },
+  });
+}
+
+
+// Auction notification helpers
+
+export async function notifyAuctionBid(sellerId: string, auctionId: string, bidAmount: number, eventTitle: string) {
+  return createNotification({
+    userId: sellerId,
+    type: 'AUCTION_BID',
+    title: '🎯 New bid on your auction!',
+    message: `Someone bid ${bidAmount} ETH on your ticket for ${eventTitle}`,
+    data: { auctionId, bidAmount, eventTitle },
+  });
+}
+
+export async function notifyOutbid(bidderId: string, auctionId: string, newBidAmount: number, eventTitle: string) {
+  return createNotification({
+    userId: bidderId,
+    type: 'AUCTION_OUTBID',
+    title: '⚠️ You\'ve been outbid!',
+    message: `Someone placed a higher bid of ${newBidAmount} ETH for ${eventTitle}. Bid again to stay in!`,
+    data: { auctionId, newBidAmount, eventTitle },
+  });
+}
+
+export async function notifyAuctionWon(winnerId: string, auctionId: string, finalPrice: number, eventTitle: string) {
+  return createNotification({
+    userId: winnerId,
+    type: 'AUCTION_WON',
+    title: '🎉 Congratulations! You won the auction!',
+    message: `You won the ticket for ${eventTitle} at ${finalPrice} ETH`,
+    data: { auctionId, finalPrice, eventTitle },
+  });
+}
+
+export async function notifyAuctionEnded(sellerId: string, auctionId: string, eventTitle: string, hasWinner: boolean) {
+  return createNotification({
+    userId: sellerId,
+    type: 'AUCTION_ENDED',
+    title: hasWinner ? '✅ Auction completed!' : '📋 Auction ended',
+    message: hasWinner 
+      ? `Your auction for ${eventTitle} has been completed successfully!`
+      : `Your auction for ${eventTitle} ended without a winning bid.`,
+    data: { auctionId, eventTitle, hasWinner },
+  });
+}
+
+export async function notifyAuctionSold(sellerId: string, auctionId: string, finalPrice: number, sellerProceeds: number, eventTitle: string) {
+  return createNotification({
+    userId: sellerId,
+    type: 'AUCTION_SOLD',
+    title: '💰 Ticket sold via auction!',
+    message: `Your ticket for ${eventTitle} sold for ${finalPrice} ETH. You earned ${sellerProceeds.toFixed(4)} ETH after fees.`,
+    data: { auctionId, finalPrice, sellerProceeds, eventTitle },
+  });
+}
+
+export async function notifyAuctionEndingSoon(bidderId: string, auctionId: string, eventTitle: string, minutesLeft: number) {
+  return createNotification({
+    userId: bidderId,
+    type: 'SYSTEM',
+    title: '⏰ Auction ending soon!',
+    message: `The auction for ${eventTitle} ends in ${minutesLeft} minutes. Don't miss out!`,
+    data: { auctionId, eventTitle, minutesLeft },
   });
 }

@@ -148,35 +148,23 @@ export function EnhancedEventCarousel({
         {/* Show arrows only if there are enough cards to scroll */}
         {filteredEvents.length > 4 && (
           <>
-            {/* Left Arrow - Positioned at cards container middle, screen left edge */}
-            <div className="absolute top-1/2 transform -translate-y-1/2 z-50" style={{ left: '-100vw' }}>
-              <div className="relative" style={{ left: '100vw', marginLeft: '16px' }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={scrollLeft}
-                  disabled={!canScrollLeft}
-                  className="w-12 h-12 p-0 border-white/20 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed bg-black/50 backdrop-blur-sm shadow-lg rounded-full"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
+            {/* Left Arrow - White circle with black arrow, positioned at image center-bottom */}
+            <button
+              onClick={scrollLeft}
+              disabled={!canScrollLeft}
+              className="absolute -left-5 top-[35%] -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed shadow-md rounded-full border border-gray-200 transition-all"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-800" />
+            </button>
 
-            {/* Right Arrow - Positioned at cards container middle, screen right edge */}
-            <div className="absolute top-1/2 transform -translate-y-1/2 z-50" style={{ right: '-100vw' }}>
-              <div className="relative" style={{ right: '100vw', marginRight: '16px' }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={scrollRight}
-                  disabled={!canScrollRight}
-                  className="w-12 h-12 p-0 border-white/20 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed bg-black/50 backdrop-blur-sm shadow-lg rounded-full"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
+            {/* Right Arrow - White circle with black arrow, positioned at image center-bottom */}
+            <button
+              onClick={scrollRight}
+              disabled={!canScrollRight}
+              className="absolute -right-5 top-[35%] -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed shadow-md rounded-full border border-gray-200 transition-all"
+            >
+              <ChevronRight className="h-5 w-5 text-gray-800" />
+            </button>
           </>
         )}
         

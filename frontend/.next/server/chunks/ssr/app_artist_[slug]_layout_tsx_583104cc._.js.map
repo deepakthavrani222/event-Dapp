@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../app/artist/%5Bslug%5D/layout.tsx"],"sourcesContent":["export default function ArtistProfileLayout({\r\n  children,\r\n}: {\r\n  children: React.ReactNode;\r\n}) {\r\n  return children;\r\n}"],"names":[],"mappings":"uCAAe,SAAS,EAAoB,UAC1C,CAAQ,CAGT,EACC,OAAO,CACT"}

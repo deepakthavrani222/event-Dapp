@@ -72,3 +72,21 @@ export function inrToEth(inr: number): number {
 export function ethToInr(eth: number): number {
   return eth * ETH_TO_INR;
 }
+
+// Fetch platform wallet from backend (for dynamic wallet)
+export async function fetchPlatformWallet(): Promise<{ wallet: string | null; feePercent: number }> {
+  try {
+    const response = await fetch('/api/platform/wallet');
+    const data = await response.json();
+    if (data.success) {
+      return {
+        wallet: data.platformWallet,
+        feePercent: data.platformFeePercent || 5
+      };
+    }
+    return { wallet: null, feePercent: 5 };
+  } catch (error) {
+    console.error('Failed to fetch platform wallet:', error);
+    return { wallet: WEB3_CONFIG.platformWallet, feePercent: 5 };
+  }
+}

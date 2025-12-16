@@ -3,13 +3,25 @@ import { getBackendWallet, getProvider } from './provider';
 import { BLOCKCHAIN_CONFIG } from './config';
 
 /**
- * ERC-1155 Ticket NFT Contract ABI (minimal interface)
- * Full contract will be deployed in Task 6
+ * ERC-1155 Ticket NFT Contract ABI (updated for new contract with ETH payments)
  */
 const TICKET_NFT_ABI = [
-  // Mint function
-  'function mint(address to, uint256 id, uint256 amount, bytes data) external',
-  'function mintBatch(address to, uint256[] ids, uint256[] amounts, bytes data) external',
+  // Admin mint function (for backend/gasless minting)
+  'function mint(address to, uint256 tokenId, uint256 amount) external',
+  'function mintBatch(address to, uint256[] tokenIds, uint256[] amounts) external',
+  
+  // Purchase function (user pays ETH directly)
+  'function purchaseTicket(uint256 tokenId, uint256 amount) external payable',
+  
+  // Token creation
+  'function createToken(uint256 tokenId, uint256 maxSupplyAmount, string tokenURI) external',
+  'function createTokenWithPrice(uint256 tokenId, uint256 maxSupplyAmount, string tokenURI, uint256 priceInWei, address organizer) external',
+  
+  // Price management
+  'function setTokenPrice(uint256 tokenId, uint256 priceInWei) external',
+  'function setTokenOrganizer(uint256 tokenId, address organizer) external',
+  'function getTokenPrice(uint256 tokenId) external view returns (uint256)',
+  'function getTokenOrganizer(uint256 tokenId) external view returns (address)',
   
   // Transfer functions
   'function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external',
@@ -18,13 +30,22 @@ const TICKET_NFT_ABI = [
   // Balance queries
   'function balanceOf(address account, uint256 id) external view returns (uint256)',
   'function balanceOfBatch(address[] accounts, uint256[] ids) external view returns (uint256[])',
+  'function totalSupply(uint256 tokenId) external view returns (uint256)',
+  'function maxSupply(uint256 tokenId) external view returns (uint256)',
+  'function availableSupply(uint256 tokenId) external view returns (uint256)',
   
   // Burn function
-  'function burn(address from, uint256 id, uint256 amount) external',
+  'function burn(address from, uint256 tokenId, uint256 amount) external',
+  
+  // Platform settings
+  'function platformWallet() external view returns (address)',
+  'function platformFeePercent() external view returns (uint256)',
   
   // Events
   'event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)',
   'event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)',
+  'event TicketPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount, uint256 totalPaid)',
+  'event TokenCreated(uint256 indexed tokenId, uint256 maxSupply, string uri)',
 ];
 
 /**

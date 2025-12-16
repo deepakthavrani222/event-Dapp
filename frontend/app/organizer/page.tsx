@@ -13,6 +13,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Footer } from '@/components/shared/footer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { OrganizerWalletCard } from '@/components/organizer/OrganizerWalletCard';
 
 interface OrganizerStats {
   totalEvents: number;
@@ -525,46 +526,14 @@ export default function OrganizerDashboard() {
         </CardContent>
       </Card>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Revenue Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Revenue Overview
-            </CardTitle>
-            <CardDescription>Monthly revenue for the last 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {monthlyRevenue.length > 0 ? (
-              <ChartContainer
-                config={{
-                  revenue: {
-                    label: "Revenue",
-                    color: "hsl(var(--chart-1))",
-                  },
-                }}
-                className="h-[200px] w-full"
-              >
-                <BarChart data={monthlyRevenue}>
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}K` : `₹${value}`} />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toLocaleString()}`} />} />
-                  <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <p>No revenue data yet. Create events to start earning!</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      {/* Wallet & Event Status Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-start">
+        {/* MetaMask Wallet Card */}
+        <OrganizerWalletCard />
+        
         {/* Event Status Distribution */}
-        <Card>
-          <CardHeader>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Event Status
@@ -572,62 +541,109 @@ export default function OrganizerDashboard() {
             <CardDescription>Distribution of your events by status</CardDescription>
           </CardHeader>
           <CardContent>
-            {stats.totalEvents > 0 ? (
-              <ChartContainer
-                config={{
-                  approved: { label: "Approved", color: "hsl(142, 76%, 36%)" },
-                  pending: { label: "Pending", color: "hsl(48, 96%, 53%)" },
-                  rejected: { label: "Rejected", color: "hsl(0, 84%, 60%)" },
-                  completed: { label: "Completed", color: "hsl(220, 70%, 50%)" },
-                }}
-                className="h-[200px] w-full"
-              >
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Approved', value: eventStatusDistribution.approved, fill: 'hsl(142, 76%, 36%)' },
-                      { name: 'Pending', value: eventStatusDistribution.pending, fill: 'hsl(48, 96%, 53%)' },
-                      { name: 'Rejected', value: eventStatusDistribution.rejected, fill: 'hsl(0, 84%, 60%)' },
-                      { name: 'Completed', value: eventStatusDistribution.completed, fill: 'hsl(220, 70%, 50%)' },
-                    ].filter(item => item.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <p>No events yet. Create your first event!</p>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {stats.totalEvents > 0 ? (
+                <ChartContainer
+                  config={{
+                    approved: { label: "Approved", color: "hsl(142, 76%, 36%)" },
+                    pending: { label: "Pending", color: "hsl(48, 96%, 53%)" },
+                    rejected: { label: "Rejected", color: "hsl(0, 84%, 60%)" },
+                    completed: { label: "Completed", color: "hsl(220, 70%, 50%)" },
+                  }}
+                  className="h-[200px] w-full md:w-[250px] flex-shrink-0"
+                >
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Approved', value: eventStatusDistribution.approved, fill: 'hsl(142, 76%, 36%)' },
+                        { name: 'Pending', value: eventStatusDistribution.pending, fill: 'hsl(48, 96%, 53%)' },
+                        { name: 'Rejected', value: eventStatusDistribution.rejected, fill: 'hsl(0, 84%, 60%)' },
+                        { name: 'Completed', value: eventStatusDistribution.completed, fill: 'hsl(220, 70%, 50%)' },
+                      ].filter(item => item.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={80}
+                      dataKey="value"
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[200px] w-full md:w-[250px] flex items-center justify-center text-muted-foreground">
+                  <p>No events yet</p>
+                </div>
+              )}
+              {/* Legend - Side by side */}
+              <div className="flex-1 grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="w-4 h-4 rounded-full bg-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-white">{eventStatusDistribution.approved}</p>
+                    <p className="text-xs text-muted-foreground">Approved</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-white">{eventStatusDistribution.pending}</p>
+                    <p className="text-xs text-muted-foreground">Pending</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                  <div className="w-4 h-4 rounded-full bg-red-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-white">{eventStatusDistribution.rejected}</p>
+                    <p className="text-xs text-muted-foreground">Rejected</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <div className="w-4 h-4 rounded-full bg-blue-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-white">{eventStatusDistribution.completed}</p>
+                    <p className="text-xs text-muted-foreground">Completed</p>
+                  </div>
+                </div>
               </div>
-            )}
-            {/* Legend */}
-            {stats.totalEvents > 0 && (
-              <div className="flex flex-wrap justify-center gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-xs text-muted-foreground">Approved ({eventStatusDistribution.approved})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="text-xs text-muted-foreground">Pending ({eventStatusDistribution.pending})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-xs text-muted-foreground">Rejected ({eventStatusDistribution.rejected})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-xs text-muted-foreground">Completed ({eventStatusDistribution.completed})</span>
-                </div>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Revenue Chart - Full Width */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Revenue Overview
+          </CardTitle>
+          <CardDescription>Monthly revenue for the last 6 months</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlyRevenue.length > 0 ? (
+            <ChartContainer
+              config={{
+                revenue: {
+                  label: "Revenue",
+                  color: "hsl(var(--chart-1))",
+                },
+              }}
+              className="h-[280px] w-full"
+            >
+              <BarChart data={monthlyRevenue}>
+                <XAxis dataKey="month" />
+                <YAxis tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}K` : `₹${value}`} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toLocaleString()}`} />} />
+                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+              <p>No revenue data yet. Create events to start earning!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Events List */}
       <div id="events-section">

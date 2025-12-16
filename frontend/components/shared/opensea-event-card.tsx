@@ -1,5 +1,4 @@
 "use client"
-import { MapPin } from "lucide-react"
 import Link from "next/link"
 import type { Event } from "@/lib/types"
 
@@ -46,13 +45,31 @@ export function OpenSeaEventCard({ event, compact = false }: OpenSeaEventCardPro
 
   const imageUrl = isValidImage() ? event.image : getDefaultImage()
 
+  // Format time to 12-hour AM/PM
+  const formatTime = (timeStr?: string) => {
+    if (timeStr) {
+      // If already has AM/PM
+      if (timeStr.toUpperCase().includes('AM') || timeStr.toUpperCase().includes('PM')) {
+        return timeStr.toUpperCase()
+      }
+      // Convert 24-hour to 12-hour
+      const [hours, minutes] = timeStr.split(':').map(Number)
+      if (!isNaN(hours)) {
+        const period = hours >= 12 ? 'PM' : 'AM'
+        const hour12 = hours % 12 || 12
+        return `${hour12}:${(minutes || 0).toString().padStart(2, '0')} ${period}`
+      }
+    }
+    return null
+  }
+
   // Format date and time
   const formatDateTime = () => {
     const date = new Date(event.date)
     const day = date.toLocaleDateString('en-IN', { weekday: 'short' })
     const dayNum = date.getDate()
     const month = date.toLocaleDateString('en-IN', { month: 'short' })
-    const time = event.time || date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+    const time = formatTime(event.time) || date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()
     return `${day}, ${dayNum} ${month}, ${time}`
   }
 
@@ -90,32 +107,29 @@ export function OpenSeaEventCard({ event, compact = false }: OpenSeaEventCardPro
         </div>
 
         {/* Content section - white/light background */}
-        <div className={`bg-white ${compact ? 'p-3 space-y-1.5' : 'p-4 space-y-2'}`}>
+        <div className={`bg-white ${compact ? 'p-3 space-y-1' : 'p-4 space-y-1'}`}>
           {/* Date and Time - colored text */}
           <p className={`font-medium text-red-500 ${compact ? 'text-xs' : 'text-sm'}`}>
             {formatDateTime()}
           </p>
 
           {/* Event Title - dark and bold */}
-          <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 ${compact ? 'text-sm min-h-[2rem]' : 'text-base min-h-[2.5rem]'}`}>
+          <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 ${compact ? 'text-sm' : 'text-base'}`}>
             {event.title}
           </h3>
 
           {/* Location */}
-          <div className="flex items-center gap-1.5 text-gray-500">
-            <MapPin className={`flex-shrink-0 ${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-            <p className={`line-clamp-1 ${compact ? 'text-xs' : 'text-sm'}`}>
-              {typeof event.venue === 'object' && event.venue?.name 
-                ? `${event.venue.name}${event.venue.city ? `, ${event.venue.city}` : ''}`
-                : typeof event.venue === 'string' 
-                  ? event.venue 
-                  : event.city || 'Venue TBA'}
-            </p>
-          </div>
+          <p className={`line-clamp-1 font-semibold text-gray-700 ${compact ? 'text-xs' : 'text-sm'}`}>
+            {typeof event.venue === 'object' && event.venue?.name 
+              ? `${event.venue.name}${event.venue.city ? `, ${event.venue.city}` : ''}`
+              : typeof event.venue === 'string' 
+                ? event.venue 
+                : event.city || 'Venue TBA'}
+          </p>
 
           {/* Price - only show for non-compact cards */}
           {!compact && (
-            <p className="text-sm text-gray-600 pt-1">
+            <p className="text-sm font-semibold text-gray-700">
               ₹{event.price.toLocaleString("en-IN")} onwards
             </p>
           )}
